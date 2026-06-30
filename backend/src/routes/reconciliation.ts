@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { ReconciliationController } from "../controllers/ReconciliationController.js";
+import { ReconciliationController } from "../controllers/ReconciliationController";
 
 export const reconciliationRouter = Router();
 const reconciliationController = new ReconciliationController();

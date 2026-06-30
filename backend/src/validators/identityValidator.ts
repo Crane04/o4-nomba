@@ -1,23 +1,10 @@
-import { compileSchema, validate } from "./validator.js";
-
-export interface CreateIdentityInput {
-  name: string;
-  kycTier?: number;
-}
-
-export interface RenameIdentityInput {
-  newName: string;
-  reason?: string;
-}
-
-export interface ChangeKycTierInput {
-  newTier: number;
-  reason?: string;
-}
-
-export interface CloseIdentityInput {
-  reason?: string;
-}
+import { compileSchema, validate } from "./validator";
+import type {
+  ChangeKycTierInput,
+  CloseIdentityInput,
+  CreateIdentityInput,
+  RenameIdentityInput,
+} from "./identityValidator.types";
 
 const createIdentityCheck = compileSchema({
   $$strict: "remove",

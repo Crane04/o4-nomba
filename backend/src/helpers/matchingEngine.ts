@@ -1,1 +1,2 @@
-export * from "../lib/matchingEngine.js";
+export * from "../lib/matchingEngine";
+export type * from "../lib/matchingEngine.types";

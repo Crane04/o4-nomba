@@ -1,5 +1,5 @@
-import { compileSchema, validate } from "./validator.js";
-import type { NombaTransferPayload } from "../services/webhookService.js";
+import { compileSchema, validate } from "./validator";
+import type { NombaTransferPayload } from "../services/webhookService.types";
 
 const transferWebhookCheck = compileSchema({
   $$strict: "remove",

@@ -7,14 +7,14 @@ import {
   getIdentityHistory,
   listIdentities,
   renameIdentity,
-} from "../services/identityService.js";
+} from "../services/identityService";
 import {
   validateChangeKycTier,
   validateCloseIdentity,
   validateCreateIdentity,
   validateRenameIdentity,
-} from "../validators/identityValidator.js";
-import { sendValidationError } from "../validators/validator.js";
+} from "../validators/identityValidator";
+import { sendValidationError } from "../validators/validator";
 
 export class IdentityController {
   create = async (req: Request, res: Response) => {

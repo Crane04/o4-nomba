@@ -5,7 +5,7 @@ import {
   scoreTiming,
   scoreHistory,
   scoreTransferAgainstCandidates,
-} from "../lib/matchingEngine.js";
+} from "../lib/matchingEngine";
 
 describe("scoreAmount", () => {
   it("scores an exact match as 1.0", () => {

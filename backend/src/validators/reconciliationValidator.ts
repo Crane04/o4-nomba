@@ -1,8 +1,5 @@
-import { compileSchema, validate } from "./validator.js";
-
-export interface ResolveMatchInput {
-  resolvedBy: string;
-}
+import { compileSchema, validate } from "./validator";
+import type { ResolveMatchInput } from "./reconciliationValidator.types";
 
 const resolveMatchCheck = compileSchema({
   $$strict: "remove",

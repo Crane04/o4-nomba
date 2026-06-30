@@ -4,12 +4,9 @@ import Validator, {
   type ValidationSchema,
 } from "fastest-validator";
 import type { Response } from "express";
+import type { ValidationResult } from "./validator.types";
 
 export const validator = new Validator();
-
-export type ValidationResult<T> =
-  | { ok: true; data: T }
-  | { ok: false; errors: ValidationError[] };
 
 export function validate<T>(check: SyncCheckFunction, payload: unknown): ValidationResult<T> {
   const data = clonePayload(payload);

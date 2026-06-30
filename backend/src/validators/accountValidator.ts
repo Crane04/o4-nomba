@@ -1,9 +1,5 @@
-import { compileSchema, validate } from "./validator.js";
-
-export interface CreateAccountInput {
-  identityId: string;
-  bankName?: string;
-}
+import { compileSchema, validate } from "./validator";
+import type { CreateAccountInput } from "./accountValidator.types";
 
 const createAccountCheck = compileSchema({
   $$strict: "remove",

@@ -1,10 +1,10 @@
 import type { Request, Response } from "express";
-import { createExpectedPayment, listExpectedPayments } from "../services/expectedPaymentService.js";
+import { createExpectedPayment, listExpectedPayments } from "../services/expectedPaymentService";
 import {
   validateCreateExpectedPayment,
   validateListExpectedPayments,
-} from "../validators/expectedPaymentValidator.js";
-import { sendValidationError } from "../validators/validator.js";
+} from "../validators/expectedPaymentValidator";
+import { sendValidationError } from "../validators/validator";
 
 export class ExpectedPaymentController {
   create = async (req: Request, res: Response) => {

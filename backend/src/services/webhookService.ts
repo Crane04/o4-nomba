@@ -1,14 +1,6 @@
-import { prisma } from "../lib/prisma.js";
-import { reconcileTransfer } from "./reconciliationService.js";
-
-export interface NombaTransferPayload {
-  amount: number;
-  senderName: string;
-  senderAccountNumber?: string;
-  narration?: string;
-  reference: string;
-  virtualAccountNumber: string;
-}
+import { prisma } from "../lib/prisma";
+import { reconcileTransfer } from "./reconciliationService";
+import type { NombaTransferPayload } from "./webhookService.types";
 
 export async function processTransferWebhook(payload: NombaTransferPayload) {
   const existing = await prisma.transfer.findUnique({ where: { reference: payload.reference } });

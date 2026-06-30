@@ -1,4 +1,4 @@
-import { prisma } from "../lib/prisma.js";
+import { prisma } from "../lib/prisma";
 
 export async function createIdentity(name: string, kycTier = 1) {
   const identity = await prisma.customerIdentity.create({

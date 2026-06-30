@@ -1,5 +1,5 @@
-import { prisma } from "../src/lib/prisma.js";
-import { createIdentity, renameIdentity } from "../src/services/identityService.js";
+import { prisma } from "../src/lib/prisma";
+import { createIdentity, renameIdentity } from "../src/services/identityService";
 
 async function main() {
   const adeola = await createIdentity("Adeola Johnson", 2);

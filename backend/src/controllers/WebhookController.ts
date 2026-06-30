@@ -1,7 +1,7 @@
 import type { Request, Response } from "express";
-import { processTransferWebhook } from "../services/webhookService.js";
-import { validateTransferWebhook } from "../validators/webhookValidator.js";
-import { sendValidationError } from "../validators/validator.js";
+import { processTransferWebhook } from "../services/webhookService";
+import { validateTransferWebhook } from "../validators/webhookValidator";
+import { sendValidationError } from "../validators/validator";
 
 export class WebhookController {
   receiveTransfer = async (req: Request, res: Response) => {

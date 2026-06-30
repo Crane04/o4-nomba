@@ -1,11 +1,11 @@
 import "dotenv/config";
 import express from "express";
 import cors from "cors";
-import { webhookRouter } from "./routes/webhooks.js";
-import { identityRouter } from "./routes/identities.js";
-import { accountsRouter } from "./routes/accounts.js";
-import { expectedPaymentsRouter } from "./routes/expectedPayments.js";
-import { reconciliationRouter } from "./routes/reconciliation.js";
+import { webhookRouter } from "./routes/webhooks";
+import { identityRouter } from "./routes/identities";
+import { accountsRouter } from "./routes/accounts";
+import { expectedPaymentsRouter } from "./routes/expectedPayments";
+import { reconciliationRouter } from "./routes/reconciliation";
 
 const app = express();
 const PORT = process.env.PORT ?? 4000;

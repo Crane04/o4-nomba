@@ -1,15 +1,8 @@
-import { compileSchema, validate } from "./validator.js";
-
-export interface CreateExpectedPaymentInput {
-  identityId: string;
-  expectedAmount: number;
-  label: string;
-  dueDate?: string;
-}
-
-export interface ListExpectedPaymentsQuery {
-  status?: string;
-}
+import { compileSchema, validate } from "./validator";
+import type {
+  CreateExpectedPaymentInput,
+  ListExpectedPaymentsQuery,
+} from "./expectedPaymentValidator.types";
 
 const createExpectedPaymentCheck = compileSchema({
   $$strict: "remove",

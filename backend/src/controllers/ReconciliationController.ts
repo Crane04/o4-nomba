@@ -1,7 +1,7 @@
 import type { Request, Response } from "express";
-import { getReviewQueue, rejectMatch, resolveMatch } from "../services/reconciliationService.js";
-import { validateResolveMatch } from "../validators/reconciliationValidator.js";
-import { sendValidationError } from "../validators/validator.js";
+import { getReviewQueue, rejectMatch, resolveMatch } from "../services/reconciliationService";
+import { validateResolveMatch } from "../validators/reconciliationValidator";
+import { sendValidationError } from "../validators/validator";
 
 export class ReconciliationController {
   queue = async (_req: Request, res: Response) => {

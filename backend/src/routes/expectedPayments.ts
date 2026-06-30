@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { ExpectedPaymentController } from "../controllers/ExpectedPaymentController.js";
+import { ExpectedPaymentController } from "../controllers/ExpectedPaymentController";
 
 export const expectedPaymentsRouter = Router();
 const expectedPaymentController = new ExpectedPaymentController();

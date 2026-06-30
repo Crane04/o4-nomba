@@ -1,17 +1,30 @@
-import type { Request, Response } from "express";
-import { createAccount, listAccounts, listAccountTransfers } from "../services/accountService.js";
-import { sendValidationError } from "../validators/validator.js";
-import { validateCreateAccount } from "../validators/accountValidator.js";
+import type { NextFunction, Request, Response } from "express";
+import {
+  AccountProvisioningError,
+  createAccount,
+  listAccounts,
+  listAccountTransfers,
+} from "../services/accountService";
+import { sendValidationError } from "../validators/validator";
+import { validateCreateAccount } from "../validators/accountValidator";
 
 export class AccountController {
-  create = async (req: Request, res: Response) => {
+  create = async (req: Request, res: Response, next: NextFunction) => {
     const validation = validateCreateAccount(req.body);
     if (!validation.ok) return sendValidationError(res, validation);
 
-    const account = await createAccount(validation.data.identityId, validation.data.bankName);
-    if (!account) return res.status(404).json({ error: "Identity not found" });
+    try {
+      const account = await createAccount(validation.data.identityId, validation.data.bankName);
+      if (!account) return res.status(404).json({ error: "Identity not found" });
 
-    res.status(201).json(account);
+      res.status(201).json(account);
+    } catch (error) {
+      if (error instanceof AccountProvisioningError) {
+        return res.status(error.statusCode).json({ error: error.message });
+      }
+
+      next(error);
+    }
   };
 
   list = async (_req: Request, res: Response) => {

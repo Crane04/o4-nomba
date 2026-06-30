@@ -1,6 +1,6 @@
 import { Router } from "express";
-import { WebhookController } from "../controllers/WebhookController.js";
-import { verifyWebhookSignature } from "../middleware/verifyWebhookSignature.js";
+import { WebhookController } from "../controllers/WebhookController";
+import { verifyWebhookSignature } from "../middleware/verifyWebhookSignature";
 
 export const webhookRouter = Router();
 const webhookController = new WebhookController();
