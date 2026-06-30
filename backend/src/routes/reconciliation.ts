@@ -1,27 +1,9 @@
 import { Router } from "express";
-import { getReviewQueue, resolveMatch, rejectMatch } from "../services/reconciliationService.js";
+import { ReconciliationController } from "../controllers/ReconciliationController.js";
 
 export const reconciliationRouter = Router();
+const reconciliationController = new ReconciliationController();
 
-reconciliationRouter.get("/queue", async (_req, res) => {
-  const queue = await getReviewQueue();
-  res.json(queue);
-});
-
-reconciliationRouter.post("/matches/:id/resolve", async (req, res) => {
-  const { resolvedBy } = req.body ?? {};
-  if (typeof resolvedBy !== "string" || !resolvedBy.trim()) {
-    return res.status(400).json({ error: "resolvedBy is required" });
-  }
-  const result = await resolveMatch(req.params.id, resolvedBy);
-  res.json(result);
-});
-
-reconciliationRouter.post("/matches/:id/reject", async (req, res) => {
-  const { resolvedBy } = req.body ?? {};
-  if (typeof resolvedBy !== "string" || !resolvedBy.trim()) {
-    return res.status(400).json({ error: "resolvedBy is required" });
-  }
-  const result = await rejectMatch(req.params.id, resolvedBy);
-  res.json(result);
-});
+reconciliationRouter.get("/queue", reconciliationController.queue);
+reconciliationRouter.post("/matches/:id/resolve", reconciliationController.resolve);
+reconciliationRouter.post("/matches/:id/reject", reconciliationController.reject);

@@ -16,6 +16,20 @@ export async function createIdentity(name: string, kycTier = 1) {
   return identity;
 }
 
+export async function listIdentities() {
+  return prisma.customerIdentity.findMany({
+    include: { virtualAccounts: true },
+    orderBy: { createdAt: "desc" },
+  });
+}
+
+export async function getIdentity(identityId: string) {
+  return prisma.customerIdentity.findUnique({
+    where: { id: identityId },
+    include: { virtualAccounts: true, expectedPayments: true },
+  });
+}
+
 export async function renameIdentity(identityId: string, newName: string, reason?: string) {
   const identity = await prisma.customerIdentity.findUniqueOrThrow({ where: { id: identityId } });
 

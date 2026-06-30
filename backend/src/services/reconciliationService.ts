@@ -1,6 +1,6 @@
 import { prisma } from "../lib/prisma.js";
 import { getKnownNames } from "./identityService.js";
-import { scoreTransferAgainstCandidates, type ExpectedPaymentCandidate } from "../lib/matchingEngine.js";
+import { scoreTransferAgainstCandidates, type ExpectedPaymentCandidate } from "../helpers/matchingEngine.js";
 
 const AUTO_MATCH_THRESHOLD = Number(process.env.AUTO_MATCH_THRESHOLD ?? 0.85);
 
