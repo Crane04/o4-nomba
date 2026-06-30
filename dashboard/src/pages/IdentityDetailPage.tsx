@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { api, type IdentityEvent } from "../lib/api.js";
 
 const EVENT_LABELS: Record<string, string> = {
@@ -38,45 +38,100 @@ export default function IdentityDetailPage() {
       .finally(() => setLoading(false));
   }, [id]);
 
-  if (loading) return <p className="text-slate-500">Loading…</p>;
-  if (!identity) return <p className="text-red-600">Identity not found.</p>;
+  if (loading) {
+    return (
+      <div className="panel p-6">
+        <div className="h-4 w-52 animate-pulse rounded bg-slate-200" />
+        <div className="mt-4 h-36 animate-pulse rounded-md bg-slate-100" />
+      </div>
+    );
+  }
+
+  if (!identity) {
+    return (
+      <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm font-medium text-red-700">
+        Identity not found.
+      </div>
+    );
+  }
 
   return (
-    <div>
-      <h1 className="text-xl font-semibold mb-1">{identity.currentName}</h1>
-      <p className="text-slate-500 text-sm mb-6">
-        KYC Tier {identity.kycTier} · {identity.virtualAccounts?.length ?? 0} linked account(s) ·{" "}
-        {identity.status}
-      </p>
+    <div className="space-y-6">
+      <Link to="/" className="text-sm font-bold text-emerald-700 hover:text-emerald-800">
+        Back to accounts
+      </Link>
 
-      <h2 className="text-sm font-semibold text-slate-700 mb-2">Identity Event Log</h2>
-      <p className="text-slate-400 text-xs mb-4">
-        Every rename, tier change, and closure is an immutable event — nothing is overwritten in place.
-      </p>
+      <section className="panel p-6">
+        <p className="page-kicker">Identity Profile</p>
+        <div className="mt-3 flex flex-col justify-between gap-5 md:flex-row md:items-end">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">{identity.currentName}</h1>
+            <p className="mt-2 text-sm font-medium text-slate-500">
+              {identity.virtualAccounts?.length ?? 0} linked account(s)
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <span className="rounded-md bg-slate-100 px-3 py-2 text-sm font-bold text-slate-700">
+              KYC Tier {identity.kycTier}
+            </span>
+            <span
+              className={`status-pill ${
+                identity.status === "active"
+                  ? "bg-emerald-100 text-emerald-800"
+                  : "bg-slate-100 text-slate-600"
+              }`}
+            >
+              {identity.status}
+            </span>
+          </div>
+        </div>
+      </section>
 
-      <ol className="relative border-l border-slate-200 ml-3">
-        {history.map((event) => (
-          <li key={event.id} className="mb-6 ml-6">
-            <span className="absolute -left-1.5 w-3 h-3 bg-slate-900 rounded-full mt-1.5" />
-            <div className="bg-white border border-slate-200 rounded-lg p-4">
-              <div className="flex items-center justify-between">
-                <span className="font-medium text-sm">{EVENT_LABELS[event.type] ?? event.type}</span>
-                <time className="text-xs text-slate-400">
-                  {new Date(event.createdAt).toLocaleString()}
-                </time>
+      <section>
+        <div className="mb-4 flex items-end justify-between">
+          <div>
+            <p className="page-kicker">Audit Trail</p>
+            <h2 className="mt-2 text-lg font-bold tracking-tight text-slate-950">Identity Events</h2>
+          </div>
+          <span className="rounded-md border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-500 shadow-sm">
+            {history.length} event(s)
+          </span>
+        </div>
+
+        <ol className="relative ml-3 border-l border-slate-200">
+          {history.map((event) => (
+            <li key={event.id} className="mb-5 ml-6">
+              <span className="absolute -left-1.5 mt-2 h-3 w-3 rounded-full border-2 border-white bg-emerald-600" />
+              <div className="panel p-4">
+                <div className="flex flex-col justify-between gap-2 md:flex-row md:items-center">
+                  <span className="text-sm font-bold text-slate-950">
+                    {EVENT_LABELS[event.type] ?? event.type}
+                  </span>
+                  <time className="text-xs font-medium text-slate-500">
+                    {new Date(event.createdAt).toLocaleString()}
+                  </time>
+                </div>
+                <div className="mt-3 grid gap-2 text-xs font-medium text-slate-600 md:grid-cols-2">
+                  {event.previousValue && (
+                    <p className="rounded-md bg-slate-50 px-3 py-2">From: {formatValue(event.previousValue)}</p>
+                  )}
+                  {event.newValue && (
+                    <p className="rounded-md bg-emerald-50 px-3 py-2 text-emerald-800">
+                      To: {formatValue(event.newValue)}
+                    </p>
+                  )}
+                </div>
+                {event.reason && (
+                  <p className="mt-3 rounded-md bg-slate-50 px-3 py-2 text-xs font-medium text-slate-500">
+                    {event.reason}
+                  </p>
+                )}
               </div>
-              {event.previousValue && (
-                <p className="text-xs text-slate-500 mt-1">From: {formatValue(event.previousValue)}</p>
-              )}
-              {event.newValue && (
-                <p className="text-xs text-slate-500">To: {formatValue(event.newValue)}</p>
-              )}
-              {event.reason && <p className="text-xs text-slate-400 mt-1 italic">"{event.reason}"</p>}
-            </div>
-          </li>
-        ))}
-        {history.length === 0 && <p className="text-slate-400 text-sm">No events yet.</p>}
-      </ol>
+            </li>
+          ))}
+          {history.length === 0 && <p className="text-sm font-medium text-slate-400">No events yet.</p>}
+        </ol>
+      </section>
     </div>
   );
 }
