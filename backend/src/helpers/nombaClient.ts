@@ -1,5 +1,6 @@
 import type {
   NombaApiResponse,
+  CreateNombaVirtualAccountRequest,
   NombaTokenData,
   NombaVirtualAccount,
 } from "./nombaClient.types";
@@ -16,17 +17,24 @@ export async function createVirtualAccount(
   currency = "NGN"
 ): Promise<NombaVirtualAccount> {
   const token = await getAccessToken();
-  const accountId = getRequiredEnv("NOMBA_ACCOUNT_ID");
+  const parentAccountId = getParentAccountId();
+  const subAccountId = getRequiredEnv("NOMBA_SUB_ACCOUNT_ID");
   const baseUrl = process.env.NOMBA_BASE_URL_SANDBOX ?? "https://sandbox.nomba.com";
+  const body: CreateNombaVirtualAccountRequest = {
+    accountRef,
+    accountName,
+    currency,
+    accountHolderId: subAccountId,
+  };
 
   const response = await fetch(`${baseUrl}/v1/accounts/virtual`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
       Authorization: `Bearer ${token}`,
-      accountId,
+      accountId: parentAccountId,
     },
-    body: JSON.stringify({ accountRef, accountName, currency }),
+    body: JSON.stringify(body),
   });
 
   const payload = (await response.json()) as NombaApiResponse<NombaVirtualAccount>;
@@ -50,7 +58,7 @@ async function getAccessToken(): Promise<string> {
 }
 
 async function issueAccessToken() {
-  const accountId = getRequiredEnv("NOMBA_ACCOUNT_ID");
+  const parentAccountId = getParentAccountId();
   const clientId = getRequiredEnv("NOMBA_CLIENT_ID");
   const privateKey = getRequiredEnv("NOMBA_PRIVATE_KEY");
   const authUrl = process.env.NOMBA_AUTH_URL ?? "https://api.nomba.com";
@@ -59,7 +67,7 @@ async function issueAccessToken() {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      accountId,
+      accountId: parentAccountId,
     },
     body: JSON.stringify({
       grant_type: "client_credentials",
@@ -77,6 +85,10 @@ async function issueAccessToken() {
     accessToken: payload.data.access_token,
     expiresAtMs: new Date(payload.data.expiresAt).getTime(),
   };
+}
+
+function getParentAccountId(): string {
+  return process.env.NOMBA_PARENT_ACCOUNT_ID ?? getRequiredEnv("NOMBA_ACCOUNT_ID");
 }
 
 function getRequiredEnv(name: string): string {

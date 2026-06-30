@@ -22,3 +22,10 @@ export interface NombaVirtualAccount {
   expired: boolean;
   createdAt: string;
 }
+
+export interface CreateNombaVirtualAccountRequest {
+  accountRef: string;
+  accountName: string;
+  currency: string;
+  accountHolderId: string;
+}

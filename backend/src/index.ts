@@ -6,6 +6,7 @@ import { identityRouter } from "./routes/identities";
 import { accountsRouter } from "./routes/accounts";
 import { expectedPaymentsRouter } from "./routes/expectedPayments";
 import { reconciliationRouter } from "./routes/reconciliation";
+import { demoRouter } from "./routes/demo";
 
 const app = express();
 const PORT = process.env.PORT ?? 4000;
@@ -29,6 +30,7 @@ app.use("/identities", identityRouter);
 app.use("/accounts", accountsRouter);
 app.use("/expected-payments", expectedPaymentsRouter);
 app.use("/reconciliation", reconciliationRouter);
+app.use("/demo", demoRouter);
 
 app.use((err: Error, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
   console.error(err);

@@ -5,6 +5,7 @@ import "./index.css";
 import App from "./App.js";
 import AccountsPage from "./pages/AccountsPage.js";
 import IdentityDetailPage from "./pages/IdentityDetailPage.js";
+import PaymentsLabPage from "./pages/PaymentsLabPage.js";
 import ReviewQueuePage from "./pages/ReviewQueuePage.js";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
@@ -13,6 +14,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
       <Routes>
         <Route path="/" element={<App />}>
           <Route index element={<AccountsPage />} />
+          <Route path="payments" element={<PaymentsLabPage />} />
           <Route path="identities/:id" element={<IdentityDetailPage />} />
           <Route path="review" element={<ReviewQueuePage />} />
         </Route>

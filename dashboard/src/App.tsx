@@ -34,6 +34,7 @@ export default function App() {
           </div>
           <nav className="flex gap-7">
             {navItem("/", "Accounts")}
+            {navItem("/payments", "Payment Lab")}
             {navItem("/review", "Review Queue")}
           </nav>
         </div>

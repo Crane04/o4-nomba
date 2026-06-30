@@ -1,22 +1,77 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { api, type VirtualAccount } from "../lib/api.js";
+import { api, type Identity, type VirtualAccount } from "../lib/api.js";
 
 export default function AccountsPage() {
   const [accounts, setAccounts] = useState<VirtualAccount[]>([]);
+  const [identities, setIdentities] = useState<Identity[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [identityName, setIdentityName] = useState("");
+  const [kycTier, setKycTier] = useState(1);
+  const [selectedIdentityId, setSelectedIdentityId] = useState("");
+  const [formError, setFormError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+  const [submittingIdentity, setSubmittingIdentity] = useState(false);
+  const [provisioningAccount, setProvisioningAccount] = useState(false);
+
+  const loadData = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const [accountList, identityList] = await Promise.all([api.getAccounts(), api.getIdentities()]);
+      setAccounts(accountList);
+      setIdentities(identityList);
+      setSelectedIdentityId((current) => current || identityList[0]?.id || "");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Unable to load dashboard data");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    api
-      .getAccounts()
-      .then(setAccounts)
-      .catch((e) => setError(e.message))
-      .finally(() => setLoading(false));
+    loadData();
   }, []);
 
   const activeAccounts = accounts.filter((account) => account.status === "active").length;
   const tierTwoPlus = accounts.filter((account) => account.identity.kycTier >= 2).length;
+
+  const handleCreateIdentity = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setFormError(null);
+    setSuccess(null);
+    setSubmittingIdentity(true);
+
+    try {
+      const identity = await api.createIdentity(identityName.trim(), kycTier);
+      setIdentityName("");
+      setSelectedIdentityId(identity.id);
+      setSuccess(`Created identity for ${identity.currentName}.`);
+      await loadData();
+    } catch (e) {
+      setFormError(e instanceof Error ? e.message : "Unable to create identity");
+    } finally {
+      setSubmittingIdentity(false);
+    }
+  };
+
+  const handleProvisionAccount = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setFormError(null);
+    setSuccess(null);
+    setProvisioningAccount(true);
+
+    try {
+      const account = await api.createAccount(selectedIdentityId);
+      setSuccess(`Provisioned ${account.bankName} account ${account.accountNumber}.`);
+      await loadData();
+    } catch (e) {
+      setFormError(e instanceof Error ? e.message : "Unable to provision account");
+    } finally {
+      setProvisioningAccount(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -64,6 +119,89 @@ export default function AccountsPage() {
           <p className="mt-2 text-3xl font-bold tracking-tight">{tierTwoPlus}</p>
         </div>
       </section>
+
+      <section className="grid gap-4 lg:grid-cols-2">
+        <form onSubmit={handleCreateIdentity} className="panel p-5">
+          <div className="mb-4">
+            <p className="text-xs font-bold uppercase tracking-[0.14em] text-emerald-700">Step 1</p>
+            <h2 className="mt-1 text-lg font-bold tracking-tight">Create Identity</h2>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-[1fr_140px]">
+            <label className="block">
+              <span className="text-xs font-bold uppercase tracking-[0.1em] text-slate-500">Name</span>
+              <input
+                value={identityName}
+                onChange={(event) => setIdentityName(event.target.value)}
+                placeholder="Customer name"
+                className="mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-medium outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
+              />
+            </label>
+            <label className="block">
+              <span className="text-xs font-bold uppercase tracking-[0.1em] text-slate-500">KYC Tier</span>
+              <select
+                value={kycTier}
+                onChange={(event) => setKycTier(Number(event.target.value))}
+                className="mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-bold outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
+              >
+                <option value={1}>Tier 1</option>
+                <option value={2}>Tier 2</option>
+                <option value={3}>Tier 3</option>
+              </select>
+            </label>
+          </div>
+
+          <button
+            type="submit"
+            disabled={!identityName.trim() || submittingIdentity}
+            className="mt-4 rounded-md bg-slate-950 px-4 py-2 text-sm font-bold text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {submittingIdentity ? "Creating..." : "Create identity"}
+          </button>
+        </form>
+
+        <form onSubmit={handleProvisionAccount} className="panel p-5">
+          <div className="mb-4">
+            <p className="text-xs font-bold uppercase tracking-[0.14em] text-emerald-700">Step 2</p>
+            <h2 className="mt-1 text-lg font-bold tracking-tight">Provision Nomba Account</h2>
+          </div>
+
+          <label className="block">
+            <span className="text-xs font-bold uppercase tracking-[0.1em] text-slate-500">Identity</span>
+            <select
+              value={selectedIdentityId}
+              onChange={(event) => setSelectedIdentityId(event.target.value)}
+              className="mt-1 w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm font-bold outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
+            >
+              {identities.map((identity) => (
+                <option key={identity.id} value={identity.id}>
+                  {identity.currentName} · Tier {identity.kycTier}
+                </option>
+              ))}
+            </select>
+          </label>
+
+          <button
+            type="submit"
+            disabled={!selectedIdentityId || provisioningAccount}
+            className="mt-4 rounded-md bg-emerald-700 px-4 py-2 text-sm font-bold text-white hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {provisioningAccount ? "Provisioning..." : "Provision account"}
+          </button>
+        </form>
+      </section>
+
+      {(formError || success) && (
+        <div
+          className={`rounded-lg border p-4 text-sm font-semibold ${
+            formError
+              ? "border-red-200 bg-red-50 text-red-700"
+              : "border-emerald-200 bg-emerald-50 text-emerald-800"
+          }`}
+        >
+          {formError ?? success}
+        </div>
+      )}
 
       <div className="panel">
         <table className="w-full text-left text-sm">
