@@ -1,20 +1,25 @@
 import type { Request, Response } from "express";
 import { createExpectedPayment, listExpectedPayments } from "../services/expectedPaymentService.js";
+import {
+  validateCreateExpectedPayment,
+  validateListExpectedPayments,
+} from "../validators/expectedPaymentValidator.js";
+import { sendValidationError } from "../validators/validator.js";
 
 export class ExpectedPaymentController {
   create = async (req: Request, res: Response) => {
-    const { identityId, expectedAmount, label, dueDate } = req.body ?? {};
-    if (typeof identityId !== "string" || typeof expectedAmount !== "number" || typeof label !== "string") {
-      return res.status(400).json({ error: "identityId, expectedAmount, and label are required" });
-    }
+    const validation = validateCreateExpectedPayment(req.body);
+    if (!validation.ok) return sendValidationError(res, validation);
 
-    const payment = await createExpectedPayment({ identityId, expectedAmount, label, dueDate });
+    const payment = await createExpectedPayment(validation.data);
     res.status(201).json(payment);
   };
 
   list = async (req: Request, res: Response) => {
-    const status = typeof req.query.status === "string" ? req.query.status : undefined;
-    const payments = await listExpectedPayments(status);
+    const validation = validateListExpectedPayments(req.query);
+    if (!validation.ok) return sendValidationError(res, validation);
+
+    const payments = await listExpectedPayments(validation.data.status);
     res.json(payments);
   };
 }

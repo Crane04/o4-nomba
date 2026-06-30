@@ -8,15 +8,20 @@ import {
   listIdentities,
   renameIdentity,
 } from "../services/identityService.js";
+import {
+  validateChangeKycTier,
+  validateCloseIdentity,
+  validateCreateIdentity,
+  validateRenameIdentity,
+} from "../validators/identityValidator.js";
+import { sendValidationError } from "../validators/validator.js";
 
 export class IdentityController {
   create = async (req: Request, res: Response) => {
-    const { name, kycTier } = req.body ?? {};
-    if (typeof name !== "string" || !name.trim()) {
-      return res.status(400).json({ error: "name is required" });
-    }
+    const validation = validateCreateIdentity(req.body);
+    if (!validation.ok) return sendValidationError(res, validation);
 
-    const identity = await createIdentity(name.trim(), kycTier ?? 1);
+    const identity = await createIdentity(validation.data.name, validation.data.kycTier ?? 1);
     res.status(201).json(identity);
   };
 
@@ -38,28 +43,26 @@ export class IdentityController {
   };
 
   rename = async (req: Request, res: Response) => {
-    const { newName, reason } = req.body ?? {};
-    if (typeof newName !== "string" || !newName.trim()) {
-      return res.status(400).json({ error: "newName is required" });
-    }
+    const validation = validateRenameIdentity(req.body);
+    if (!validation.ok) return sendValidationError(res, validation);
 
-    const result = await renameIdentity(req.params.id, newName.trim(), reason);
+    const result = await renameIdentity(req.params.id, validation.data.newName, validation.data.reason);
     res.json(result);
   };
 
   changeKycTier = async (req: Request, res: Response) => {
-    const { newTier, reason } = req.body ?? {};
-    if (typeof newTier !== "number" || newTier < 1 || newTier > 3) {
-      return res.status(400).json({ error: "newTier must be 1, 2, or 3" });
-    }
+    const validation = validateChangeKycTier(req.body);
+    if (!validation.ok) return sendValidationError(res, validation);
 
-    const result = await changeKycTier(req.params.id, newTier, reason);
+    const result = await changeKycTier(req.params.id, validation.data.newTier, validation.data.reason);
     res.json(result);
   };
 
   close = async (req: Request, res: Response) => {
-    const { reason } = req.body ?? {};
-    const result = await closeIdentity(req.params.id, reason);
+    const validation = validateCloseIdentity(req.body);
+    if (!validation.ok) return sendValidationError(res, validation);
+
+    const result = await closeIdentity(req.params.id, validation.data.reason);
     res.json(result);
   };
 }

@@ -1,5 +1,7 @@
 import type { Request, Response } from "express";
 import { getReviewQueue, rejectMatch, resolveMatch } from "../services/reconciliationService.js";
+import { validateResolveMatch } from "../validators/reconciliationValidator.js";
+import { sendValidationError } from "../validators/validator.js";
 
 export class ReconciliationController {
   queue = async (_req: Request, res: Response) => {
@@ -8,22 +10,18 @@ export class ReconciliationController {
   };
 
   resolve = async (req: Request, res: Response) => {
-    const { resolvedBy } = req.body ?? {};
-    if (typeof resolvedBy !== "string" || !resolvedBy.trim()) {
-      return res.status(400).json({ error: "resolvedBy is required" });
-    }
+    const validation = validateResolveMatch(req.body);
+    if (!validation.ok) return sendValidationError(res, validation);
 
-    const result = await resolveMatch(req.params.id, resolvedBy);
+    const result = await resolveMatch(req.params.id, validation.data.resolvedBy);
     res.json(result);
   };
 
   reject = async (req: Request, res: Response) => {
-    const { resolvedBy } = req.body ?? {};
-    if (typeof resolvedBy !== "string" || !resolvedBy.trim()) {
-      return res.status(400).json({ error: "resolvedBy is required" });
-    }
+    const validation = validateResolveMatch(req.body);
+    if (!validation.ok) return sendValidationError(res, validation);
 
-    const result = await rejectMatch(req.params.id, resolvedBy);
+    const result = await rejectMatch(req.params.id, validation.data.resolvedBy);
     res.json(result);
   };
 }
