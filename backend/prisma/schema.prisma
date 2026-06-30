@@ -1,0 +1,99 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model CustomerIdentity {
+  id          String   @id @default(cuid())
+  currentName String
+  kycTier     Int      @default(1)
+  status      String   @default("active")
+  createdAt   DateTime @default(now())
+
+  virtualAccounts  VirtualAccount[]
+  identityEvents   IdentityEvent[]
+  expectedPayments ExpectedPayment[]
+}
+
+model IdentityEvent {
+  id          String   @id @default(cuid())
+  identityId  String
+  identity    CustomerIdentity @relation(fields: [identityId], references: [id])
+  type        String
+  previousValue String?
+  newValue      String?
+  reason      String?
+  createdAt   DateTime @default(now())
+
+  @@index([identityId, createdAt])
+}
+
+model VirtualAccount {
+  id            String   @id @default(cuid())
+  accountNumber String   @unique
+  bankName      String   @default("Nomba")
+  identityId    String
+  identity      CustomerIdentity @relation(fields: [identityId], references: [id])
+  status        String   @default("active")
+  createdAt     DateTime @default(now())
+
+  transfers Transfer[]
+}
+
+model ExpectedPayment {
+  id           String   @id @default(cuid())
+  identityId   String
+  identity     CustomerIdentity @relation(fields: [identityId], references: [id])
+  expectedAmount Float
+  label        String
+  dueDate      DateTime?
+  status       String   @default("pending")
+  createdAt    DateTime @default(now())
+
+  matches ReconciliationMatch[]
+}
+
+model Transfer {
+  id               String   @id @default(cuid())
+  virtualAccountId String?
+  virtualAccount   VirtualAccount? @relation(fields: [virtualAccountId], references: [id])
+  amount           Float
+  senderName       String
+  senderAccountNumber String?
+  narration        String?
+  reference        String?  @unique
+  receivedAt       DateTime @default(now())
+  status           String   @default("unmatched")
+
+  matches ReconciliationMatch[]
+
+  @@index([status])
+}
+
+model ReconciliationMatch {
+  id                String   @id @default(cuid())
+  transferId        String
+  transfer          Transfer @relation(fields: [transferId], references: [id])
+  expectedPaymentId String
+  expectedPayment   ExpectedPayment @relation(fields: [expectedPaymentId], references: [id])
+
+  confidenceScore   Float
+  amountScore       Float
+  nameScore         Float
+  timingScore       Float
+  historyScore      Float
+
+  decision          String   @default("pending")
+  resolvedBy        String?
+  resolvedAt        DateTime?
+  reasoning         String
+
+  createdAt         DateTime @default(now())
+
+  @@index([transferId])
+  @@index([decision])
+}
