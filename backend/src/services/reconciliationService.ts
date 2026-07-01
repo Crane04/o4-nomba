@@ -4,11 +4,11 @@ import { scoreTransferAgainstCandidates, type ExpectedPaymentCandidate } from ".
 
 const AUTO_MATCH_THRESHOLD = Number(process.env.AUTO_MATCH_THRESHOLD ?? 0.85);
 
-export async function reconcileTransfer(transferId: string) {
+export async function reconcileTransfer(organizationId: string, transferId: string) {
   const transfer = await prisma.transfer.findUniqueOrThrow({ where: { id: transferId } });
 
   const expectedPayments = await prisma.expectedPayment.findMany({
-    where: { status: { in: ["pending", "partially_matched"] } },
+    where: { organizationId, status: { in: ["pending", "partially_matched"] } },
     include: { identity: true },
   });
 
@@ -19,11 +19,11 @@ export async function reconcileTransfer(transferId: string) {
 
   const candidates: ExpectedPaymentCandidate[] = await Promise.all(
     expectedPayments.map(async (ep) => {
-      const knownNames = await getKnownNames(ep.identityId);
+      const knownNames = await getKnownNames(organizationId, ep.identityId);
       const priorTransfers = await prisma.transfer.findMany({
         where: {
           status: { in: ["matched", "resolved"] },
-          virtualAccount: { identityId: ep.identityId },
+          virtualAccount: { organizationId, identityId: ep.identityId },
         },
         select: { senderName: true },
         take: 20,
@@ -36,7 +36,10 @@ export async function reconcileTransfer(transferId: string) {
         dueDate: ep.dueDate,
         identityCurrentName: ep.identity.currentName,
         identityKnownNames: knownNames,
-        priorSenderNames: priorTransfers.map((t) => t.senderName),
+        priorSenderNames: uniqueNames([
+          ...priorTransfers.map((t) => t.senderName),
+          ...ep.identity.knownSenderNames,
+        ]),
       };
     })
   );
@@ -87,10 +90,16 @@ export async function reconcileTransfer(transferId: string) {
   return { transfer, matches: scored, autoMatched, threshold: AUTO_MATCH_THRESHOLD };
 }
 
-export async function resolveMatch(matchId: string, resolvedBy: string) {
-  const match = await prisma.reconciliationMatch.findUniqueOrThrow({ where: { id: matchId } });
+export async function resolveMatch(organizationId: string, matchId: string, resolvedBy: string) {
+  const match = await prisma.reconciliationMatch.findFirstOrThrow({
+    where: { id: matchId, expectedPayment: { organizationId } },
+    include: {
+      transfer: true,
+      expectedPayment: true,
+    },
+  });
 
-  return prisma.$transaction([
+  const result = await prisma.$transaction([
     prisma.reconciliationMatch.update({
       where: { id: matchId },
       data: { decision: "manual_resolved", resolvedBy, resolvedAt: new Date() },
@@ -101,18 +110,30 @@ export async function resolveMatch(matchId: string, resolvedBy: string) {
       data: { status: "matched" },
     }),
   ]);
+
+  await rememberTrustedSenderName(
+    organizationId,
+    match.expectedPayment.identityId,
+    match.transfer.senderName
+  );
+
+  return result;
 }
 
-export async function rejectMatch(matchId: string, resolvedBy: string) {
+export async function rejectMatch(organizationId: string, matchId: string, resolvedBy: string) {
+  await prisma.reconciliationMatch.findFirstOrThrow({
+    where: { id: matchId, expectedPayment: { organizationId } },
+  });
+
   return prisma.reconciliationMatch.update({
     where: { id: matchId },
     data: { decision: "rejected", resolvedBy, resolvedAt: new Date() },
   });
 }
 
-export async function getReviewQueue() {
+export async function getReviewQueue(organizationId: string) {
   const transfers = await prisma.transfer.findMany({
-    where: { status: "under_review" },
+    where: { status: "under_review", virtualAccount: { organizationId } },
     include: {
       matches: {
         where: { decision: "pending" },
@@ -123,4 +144,40 @@ export async function getReviewQueue() {
     orderBy: { receivedAt: "desc" },
   });
   return transfers;
+}
+
+function uniqueNames(names: string[]) {
+  const seen = new Set<string>();
+  const result: string[] = [];
+
+  for (const name of names) {
+    const trimmed = name.trim();
+    const key = trimmed.toLowerCase();
+    if (!trimmed || seen.has(key)) continue;
+
+    seen.add(key);
+    result.push(trimmed);
+  }
+
+  return result;
+}
+
+async function rememberTrustedSenderName(organizationId: string, identityId: string, senderName: string) {
+  const trustedName = senderName.trim();
+  if (!trustedName) return;
+
+  const identity = await prisma.customerIdentity.findFirstOrThrow({
+    where: { id: identityId, organizationId },
+    select: { knownSenderNames: true },
+  });
+
+  const alreadyKnown = identity.knownSenderNames.some(
+    (knownName) => knownName.toLowerCase() === trustedName.toLowerCase()
+  );
+  if (alreadyKnown) return;
+
+  await prisma.customerIdentity.update({
+    where: { id: identityId },
+    data: { knownSenderNames: [...identity.knownSenderNames, trustedName] },
+  });
 }

@@ -1,0 +1,111 @@
+@import url("https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 210 40% 98%;
+    --foreground: 222.2 84% 4.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+    --primary: 221.2 83.2% 53.3%;
+    --primary-foreground: 210 40% 98%;
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 221.2 83.2% 53.3%;
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    --background: 217 43% 8%;
+    --foreground: 210 40% 98%;
+    --card: 224 33% 13%;
+    --card-foreground: 210 40% 98%;
+    --popover: 224 33% 13%;
+    --popover-foreground: 210 40% 98%;
+    --primary: 217.2 91.2% 59.8%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 223 36% 11%;
+    --secondary-foreground: 210 40% 98%;
+    --muted: 223 30% 15%;
+    --muted-foreground: 215 20.2% 65.1%;
+    --accent: 223 30% 15%;
+    --accent-foreground: 210 40% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+    --border: 223 27% 17%;
+    --input: 223 27% 17%;
+    --ring: 224.3 76.3% 48%;
+  }
+
+  * {
+    border-color: hsl(var(--border));
+  }
+
+  html {
+    color-scheme: light;
+  }
+
+  html.dark {
+    color-scheme: dark;
+  }
+
+  body {
+    font-feature-settings: "tnum" 1, "ss01" 1;
+    @apply bg-background font-sans text-foreground;
+  }
+}
+
+@layer components {
+  .page-kicker {
+    @apply text-xs font-semibold uppercase tracking-widest text-muted-foreground;
+  }
+
+  .page-title {
+    @apply text-2xl font-semibold tracking-tight text-foreground;
+  }
+
+  .page-copy {
+    @apply mt-2 max-w-3xl text-sm leading-6 text-muted-foreground;
+  }
+
+  .panel {
+    @apply overflow-hidden rounded-xl border border-border bg-card shadow-[0_1px_3px_rgba(0,0,0,0.3)];
+  }
+
+  .metric {
+    @apply rounded-xl border border-border bg-card p-6 shadow-[0_1px_3px_rgba(0,0,0,0.3)];
+  }
+
+  .status-pill {
+    @apply inline-flex w-fit items-center rounded-full px-1.5 py-0.5 text-[11px] font-medium leading-4;
+  }
+
+  .input-field {
+    @apply rounded-lg border border-input bg-background px-3 py-2 text-sm text-foreground outline-none transition-colors placeholder:text-muted-foreground focus:border-primary;
+  }
+
+  .primary-button {
+    @apply rounded-lg bg-primary px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-[#2d5ee0] disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground;
+  }
+
+  .outline-button {
+    @apply rounded-lg border border-primary px-4 py-2 text-sm font-medium text-primary transition-colors hover:bg-accent disabled:cursor-not-allowed disabled:border-muted disabled:text-muted-foreground;
+  }
+
+  .table-head {
+    @apply border-b border-border text-xs uppercase tracking-wider text-muted-foreground;
+  }
+}

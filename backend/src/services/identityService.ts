@@ -1,8 +1,9 @@
 import { prisma } from "../lib/prisma";
 
-export async function createIdentity(name: string, kycTier = 1) {
+export async function createIdentity(organizationId: string, name: string, kycTier = 1) {
   const identity = await prisma.customerIdentity.create({
     data: {
+      organizationId,
       currentName: name,
       kycTier,
       identityEvents: {
@@ -16,22 +17,23 @@ export async function createIdentity(name: string, kycTier = 1) {
   return identity;
 }
 
-export async function listIdentities() {
+export async function listIdentities(organizationId: string) {
   return prisma.customerIdentity.findMany({
+    where: { organizationId },
     include: { virtualAccounts: true },
     orderBy: { createdAt: "desc" },
   });
 }
 
-export async function getIdentity(identityId: string) {
-  return prisma.customerIdentity.findUnique({
-    where: { id: identityId },
+export async function getIdentity(organizationId: string, identityId: string) {
+  return prisma.customerIdentity.findFirst({
+    where: { id: identityId, organizationId },
     include: { virtualAccounts: true, expectedPayments: true },
   });
 }
 
-export async function renameIdentity(identityId: string, newName: string, reason?: string) {
-  const identity = await prisma.customerIdentity.findUniqueOrThrow({ where: { id: identityId } });
+export async function renameIdentity(organizationId: string, identityId: string, newName: string, reason?: string) {
+  const identity = await prisma.customerIdentity.findFirstOrThrow({ where: { id: identityId, organizationId } });
 
   return prisma.$transaction([
     prisma.identityEvent.create({
@@ -50,8 +52,8 @@ export async function renameIdentity(identityId: string, newName: string, reason
   ]);
 }
 
-export async function changeKycTier(identityId: string, newTier: number, reason?: string) {
-  const identity = await prisma.customerIdentity.findUniqueOrThrow({ where: { id: identityId } });
+export async function changeKycTier(organizationId: string, identityId: string, newTier: number, reason?: string) {
+  const identity = await prisma.customerIdentity.findFirstOrThrow({ where: { id: identityId, organizationId } });
 
   return prisma.$transaction([
     prisma.identityEvent.create({
@@ -70,7 +72,9 @@ export async function changeKycTier(identityId: string, newTier: number, reason?
   ]);
 }
 
-export async function closeIdentity(identityId: string, reason?: string) {
+export async function closeIdentity(organizationId: string, identityId: string, reason?: string) {
+  await prisma.customerIdentity.findFirstOrThrow({ where: { id: identityId, organizationId } });
+
   return prisma.$transaction([
     prisma.identityEvent.create({
       data: { identityId, type: "closed", reason },
@@ -80,14 +84,14 @@ export async function closeIdentity(identityId: string, reason?: string) {
       data: { status: "closed" },
     }),
     prisma.virtualAccount.updateMany({
-      where: { identityId },
+      where: { identityId, organizationId },
       data: { status: "closed" },
     }),
   ]);
 }
 
-export async function getKnownNames(identityId: string): Promise<string[]> {
-  const identity = await prisma.customerIdentity.findUniqueOrThrow({ where: { id: identityId } });
+export async function getKnownNames(organizationId: string, identityId: string): Promise<string[]> {
+  const identity = await prisma.customerIdentity.findFirstOrThrow({ where: { id: identityId, organizationId } });
   const renameEvents = await prisma.identityEvent.findMany({
     where: { identityId, type: "renamed" },
   });
@@ -106,7 +110,10 @@ export async function getKnownNames(identityId: string): Promise<string[]> {
   return Array.from(names);
 }
 
-export async function getIdentityHistory(identityId: string) {
+export async function getIdentityHistory(organizationId: string, identityId: string) {
+  const identity = await prisma.customerIdentity.findFirst({ where: { id: identityId, organizationId } });
+  if (!identity) return [];
+
   return prisma.identityEvent.findMany({
     where: { identityId },
     orderBy: { createdAt: "asc" },

@@ -6,8 +6,8 @@ export class AccountProvisioningError extends Error {
   statusCode = 502;
 }
 
-export async function createAccount(identityId: string, bankName?: string) {
-  const identity = await prisma.customerIdentity.findUnique({ where: { id: identityId } });
+export async function createAccount(organizationId: string, identityId: string, bankName?: string) {
+  const identity = await prisma.customerIdentity.findFirst({ where: { id: identityId, organizationId } });
   if (!identity) return null;
 
   const accountRef = crypto.randomUUID();
@@ -26,21 +26,23 @@ export async function createAccount(identityId: string, bankName?: string) {
     data: {
       accountNumber: virtualAccount.bankAccountNumber,
       bankName: virtualAccount.bankName ?? bankName ?? "Nomba",
+      organizationId,
       identityId,
     },
   });
 }
 
-export async function listAccounts() {
+export async function listAccounts(organizationId: string) {
   return prisma.virtualAccount.findMany({
+    where: { organizationId },
     include: { identity: true },
     orderBy: { createdAt: "desc" },
   });
 }
 
-export async function listAccountTransfers(accountId: string) {
+export async function listAccountTransfers(organizationId: string, accountId: string) {
   return prisma.transfer.findMany({
-    where: { virtualAccountId: accountId },
+    where: { virtualAccountId: accountId, virtualAccount: { organizationId } },
     orderBy: { receivedAt: "desc" },
   });
 }

@@ -14,7 +14,7 @@ export class AccountController {
     if (!validation.ok) return sendValidationError(res, validation);
 
     try {
-      const account = await createAccount(validation.data.identityId, validation.data.bankName);
+      const account = await createAccount(req.org!.id, validation.data.identityId, validation.data.bankName);
       if (!account) return res.status(404).json({ error: "Identity not found" });
 
       res.status(201).json(account);
@@ -27,13 +27,13 @@ export class AccountController {
     }
   };
 
-  list = async (_req: Request, res: Response) => {
-    const accounts = await listAccounts();
+  list = async (req: Request, res: Response) => {
+    const accounts = await listAccounts(req.org!.id);
     res.json(accounts);
   };
 
   listTransfers = async (req: Request, res: Response) => {
-    const transfers = await listAccountTransfers(req.params.id);
+    const transfers = await listAccountTransfers(req.org!.id, req.params.id);
     res.json(transfers);
   };
 }

@@ -21,24 +21,24 @@ export class IdentityController {
     const validation = validateCreateIdentity(req.body);
     if (!validation.ok) return sendValidationError(res, validation);
 
-    const identity = await createIdentity(validation.data.name, validation.data.kycTier ?? 1);
+    const identity = await createIdentity(req.org!.id, validation.data.name, validation.data.kycTier ?? 1);
     res.status(201).json(identity);
   };
 
-  list = async (_req: Request, res: Response) => {
-    const identities = await listIdentities();
+  list = async (req: Request, res: Response) => {
+    const identities = await listIdentities(req.org!.id);
     res.json(identities);
   };
 
   get = async (req: Request, res: Response) => {
-    const identity = await getIdentity(req.params.id);
+    const identity = await getIdentity(req.org!.id, req.params.id);
     if (!identity) return res.status(404).json({ error: "Not found" });
 
     res.json(identity);
   };
 
   history = async (req: Request, res: Response) => {
-    const history = await getIdentityHistory(req.params.id);
+    const history = await getIdentityHistory(req.org!.id, req.params.id);
     res.json(history);
   };
 
@@ -46,7 +46,7 @@ export class IdentityController {
     const validation = validateRenameIdentity(req.body);
     if (!validation.ok) return sendValidationError(res, validation);
 
-    const result = await renameIdentity(req.params.id, validation.data.newName, validation.data.reason);
+    const result = await renameIdentity(req.org!.id, req.params.id, validation.data.newName, validation.data.reason);
     res.json(result);
   };
 
@@ -54,7 +54,7 @@ export class IdentityController {
     const validation = validateChangeKycTier(req.body);
     if (!validation.ok) return sendValidationError(res, validation);
 
-    const result = await changeKycTier(req.params.id, validation.data.newTier, validation.data.reason);
+    const result = await changeKycTier(req.org!.id, req.params.id, validation.data.newTier, validation.data.reason);
     res.json(result);
   };
 
@@ -62,7 +62,7 @@ export class IdentityController {
     const validation = validateCloseIdentity(req.body);
     if (!validation.ok) return sendValidationError(res, validation);
 
-    const result = await closeIdentity(req.params.id, validation.data.reason);
+    const result = await closeIdentity(req.org!.id, req.params.id, validation.data.reason);
     res.json(result);
   };
 }

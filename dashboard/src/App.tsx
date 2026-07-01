@@ -24,8 +24,8 @@ export default function App() {
       <header className="border-b border-slate-200/80 bg-white/95">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6">
           <div className="flex items-center gap-3 py-3">
-            <div className="grid h-9 w-9 place-items-center rounded-md bg-slate-950 font-mono text-sm font-black text-white">
-              O4
+            <div className="grid h-9 min-w-20 place-items-center rounded-md bg-slate-950 px-3 font-mono text-xs font-black text-white">
+              OhFour
             </div>
             <div>
               <p className="text-sm font-bold leading-5 tracking-tight">Nomba Reconciliation</p>

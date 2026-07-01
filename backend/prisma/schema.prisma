@@ -7,16 +7,34 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model Organization {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  apiKey       String   @unique @default(cuid())
+  createdAt    DateTime @default(now())
+
+  identities       CustomerIdentity[]
+  expectedPayments ExpectedPayment[]
+  virtualAccounts  VirtualAccount[]
+}
+
 model CustomerIdentity {
   id          String   @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
   currentName String
   kycTier     Int      @default(1)
   status      String   @default("active")
+  knownSenderNames String[] @default([])
   createdAt   DateTime @default(now())
 
   virtualAccounts  VirtualAccount[]
   identityEvents   IdentityEvent[]
   expectedPayments ExpectedPayment[]
+
+  @@index([organizationId])
 }
 
 model IdentityEvent {
@@ -36,16 +54,22 @@ model VirtualAccount {
   id            String   @id @default(cuid())
   accountNumber String   @unique
   bankName      String   @default("Nomba")
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
   identityId    String
   identity      CustomerIdentity @relation(fields: [identityId], references: [id])
   status        String   @default("active")
   createdAt     DateTime @default(now())
 
   transfers Transfer[]
+
+  @@index([organizationId])
 }
 
 model ExpectedPayment {
   id           String   @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
   identityId   String
   identity     CustomerIdentity @relation(fields: [identityId], references: [id])
   expectedAmount Float
@@ -55,6 +79,8 @@ model ExpectedPayment {
   createdAt    DateTime @default(now())
 
   matches ReconciliationMatch[]
+
+  @@index([organizationId])
 }
 
 model Transfer {

@@ -11,7 +11,9 @@ export class ExpectedPaymentController {
     const validation = validateCreateExpectedPayment(req.body);
     if (!validation.ok) return sendValidationError(res, validation);
 
-    const payment = await createExpectedPayment(validation.data);
+    const payment = await createExpectedPayment({ ...validation.data, organizationId: req.org!.id });
+    if (!payment) return res.status(404).json({ error: "Identity not found" });
+
     res.status(201).json(payment);
   };
 
@@ -19,7 +21,7 @@ export class ExpectedPaymentController {
     const validation = validateListExpectedPayments(req.query);
     if (!validation.ok) return sendValidationError(res, validation);
 
-    const payments = await listExpectedPayments(validation.data.status);
+    const payments = await listExpectedPayments(req.org!.id, validation.data.status);
     res.json(payments);
   };
 }

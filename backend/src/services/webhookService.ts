@@ -2,7 +2,10 @@ import { prisma } from "../lib/prisma";
 import { reconcileTransfer } from "./reconciliationService";
 import type { NombaTransferPayload } from "./webhookService.types";
 
-export async function processTransferWebhook(payload: NombaTransferPayload) {
+export async function processTransferWebhook(
+  payload: NombaTransferPayload,
+  options: { organizationId?: string } = {}
+) {
   const existing = await prisma.transfer.findUnique({ where: { reference: payload.reference } });
   if (existing) {
     return {
@@ -15,6 +18,13 @@ export async function processTransferWebhook(payload: NombaTransferPayload) {
     where: { accountNumber: payload.virtualAccountNumber },
   });
 
+  if (options.organizationId && virtualAccount?.organizationId !== options.organizationId) {
+    return {
+      status: "account_not_found" as const,
+      transferId: null,
+    };
+  }
+
   const transfer = await prisma.transfer.create({
     data: {
       amount: payload.amount,
@@ -26,7 +36,17 @@ export async function processTransferWebhook(payload: NombaTransferPayload) {
     },
   });
 
-  const result = await reconcileTransfer(transfer.id);
+  if (!virtualAccount) {
+    await prisma.transfer.update({ where: { id: transfer.id }, data: { status: "under_review" } });
+    return {
+      status: "created" as const,
+      transferId: transfer.id,
+      autoMatched: false,
+      topMatch: null,
+    };
+  }
+
+  const result = await reconcileTransfer(virtualAccount.organizationId, transfer.id);
 
   return {
     status: "created" as const,
