@@ -111,18 +111,18 @@ export default function RetailerDetailPage() {
           href={`http://localhost:5173/identities/${identity.id}`}
           target="_blank"
           rel="noreferrer"
-          className="outline-button inline-flex items-center gap-2"
+          className="outline-button inline-flex w-full items-center justify-center gap-2 sm:w-auto"
         >
           <FiExternalLink className="h-4 w-4" />
           View in OhFour Dashboard
         </a>
       </section>
 
-      <section className="panel p-6">
-        <div className="flex items-start justify-between gap-4">
-          <div>
+      <section className="panel p-4 sm:p-6">
+        <div className="flex flex-col items-start justify-between gap-4 sm:flex-row">
+          <div className="min-w-0">
             <p className="page-kicker">Dedicated Collection Account</p>
-            <p className="mt-4 font-mono text-3xl font-semibold tracking-wide text-[#f0f4ff]">
+            <p className="mt-4 break-all font-mono text-2xl font-semibold tracking-wide text-[#f0f4ff] sm:text-3xl">
               {account?.accountNumber ?? "No account provisioned"}
             </p>
             <p className="mt-2 text-sm text-[#8892a4]">
@@ -134,14 +134,14 @@ export default function RetailerDetailPage() {
             type="button"
             onClick={copyAccount}
             disabled={!account?.accountNumber}
-            className="outline-button"
+            className="outline-button w-full sm:w-auto"
           >
             {copied ? "Copied" : "Copy"}
           </button>
         </div>
       </section>
 
-      <section className="grid gap-6 md:grid-cols-3">
+      <section className="grid gap-4 md:grid-cols-3">
         <Metric label="Total Invoiced" value={formatCurrency(totals.invoiced)} />
         <Metric label="Received" value={formatCurrency(totals.collected)} />
         <Metric label="Outstanding" value={formatCurrency(totals.outstanding)} />
@@ -151,7 +151,7 @@ export default function RetailerDetailPage() {
         <SectionHeader title="Open Invoices" copy="Expected distributor payments for this retailer." />
         <form
           onSubmit={createInvoice}
-          className="grid gap-3 border-b border-[rgba(255,255,255,0.04)] p-6 md:grid-cols-[minmax(240px,1fr)_160px_160px_150px]"
+          className="grid gap-3 border-b border-[rgba(255,255,255,0.04)] p-4 sm:p-6 md:grid-cols-[minmax(220px,1fr)_150px_150px_140px]"
         >
           <input
             value={invoiceLabel}
@@ -196,7 +196,7 @@ export default function RetailerDetailPage() {
         ) : (
           <div>
             {expectedPayments.map((payment) => (
-              <div key={payment.id} className="grid gap-3 border-b border-[rgba(255,255,255,0.04)] px-6 py-4 last:border-b-0 md:grid-cols-[1fr_160px_130px_120px] md:items-center">
+              <div key={payment.id} className="grid gap-3 border-b border-[rgba(255,255,255,0.04)] px-4 py-4 last:border-b-0 sm:px-6 md:grid-cols-[1fr_160px_130px_120px] md:items-center">
                 <p className="font-medium text-[#f0f4ff]">{payment.label}</p>
                 <p className="font-mono font-semibold text-[#f0f4ff]">{formatCurrency(payment.expectedAmount)}</p>
                 <p className="text-sm text-[#8892a4]">{formatDate(payment.dueDate)}</p>
@@ -215,7 +215,7 @@ export default function RetailerDetailPage() {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[760px] text-left text-sm">
+            <table className="w-full min-w-[680px] text-left text-sm">
               <thead className="table-head">
                 <tr>
                   <th className="px-6 py-4">Amount</th>
@@ -347,14 +347,14 @@ function Metric({ label, value }: { label: string; value: string }) {
   return (
     <div className="metric">
       <p className="text-xs font-semibold uppercase tracking-widest text-[#8892a4]">{label}</p>
-      <p className="mt-4 font-mono text-2xl font-semibold text-[#f0f4ff]">{value}</p>
+      <p className="mt-4 break-words font-mono text-xl font-semibold text-[#f0f4ff] sm:text-2xl">{value}</p>
     </div>
   );
 }
 
 function SectionHeader({ title, copy }: { title: string; copy: string }) {
   return (
-    <div className="border-b border-[rgba(255,255,255,0.04)] px-6 py-5">
+    <div className="border-b border-[rgba(255,255,255,0.04)] px-4 py-5 sm:px-6">
       <h2 className="text-sm font-semibold text-[#f0f4ff]">{title}</h2>
       <p className="mt-1 text-sm text-[#8892a4]">{copy}</p>
     </div>

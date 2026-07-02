@@ -27,19 +27,19 @@ export default function App() {
   }
 
   const navItem = (to: string, label: string) => {
-    const active = to === "/" ? location.pathname === "/" : location.pathname.startsWith(to);
-    const Icon = to === "/" ? FiGrid : to === "/retailers" ? FiShoppingBag : FiAlertTriangle;
+    const active = location.pathname === to || location.pathname.startsWith(`${to}/`);
+    const Icon = to === "/dashboard" ? FiGrid : to === "/retailers" ? FiShoppingBag : FiAlertTriangle;
 
     return (
       <Link
         to={to}
-        className={`flex items-center gap-3 border-l-[3px] px-4 py-3 text-sm font-medium transition-colors ${
+        className={`flex items-center justify-center gap-2 rounded-lg border border-transparent px-2 py-2 text-xs font-medium transition-colors lg:justify-start lg:gap-3 lg:rounded-none lg:border-y-0 lg:border-r-0 lg:border-l-[3px] lg:px-4 lg:py-3 lg:text-sm ${
           active
             ? "border-[#3b6ef8] bg-[rgba(59,110,248,0.1)] text-[#3b6ef8]"
-            : "border-transparent text-[#8892a4] hover:bg-[rgba(255,255,255,0.04)] hover:text-[#f0f4ff]"
+            : "text-[#8892a4] hover:bg-[rgba(255,255,255,0.04)] hover:text-[#f0f4ff]"
         }`}
       >
-        <Icon className="h-4 w-4" />
+        <Icon className="hidden h-4 w-4 sm:block" />
         {label}
       </Link>
     );
@@ -47,7 +47,32 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-[#0d1117] text-[#f0f4ff]">
-      <aside className="fixed inset-y-0 left-0 flex w-[240px] flex-col border-r border-[rgba(255,255,255,0.06)] bg-[#111827]">
+      <header className="sticky top-0 z-30 border-b border-[rgba(255,255,255,0.06)] bg-[#111827]/95 px-4 py-3 backdrop-blur lg:hidden">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex min-w-0 items-center gap-3">
+            <LogoMark size="sm" />
+            <div className="min-w-0">
+              <p className="truncate text-sm font-semibold text-[#f0f4ff]">{organization.name}</p>
+              <p className="text-xs text-[#8892a4]">Collections Portal</p>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={logout}
+            className="grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-[rgba(255,255,255,0.08)] text-[#8892a4]"
+            aria-label="Logout"
+          >
+            <FiLogOut className="h-4 w-4" />
+          </button>
+        </div>
+        <nav className="mt-3 grid grid-cols-3 gap-2">
+          {navItem("/dashboard", "Dashboard")}
+          {navItem("/retailers", "Retailers")}
+          {navItem("/review", "Flagged")}
+        </nav>
+      </header>
+
+      <aside className="fixed inset-y-0 left-0 hidden w-[240px] flex-col border-r border-[rgba(255,255,255,0.06)] bg-[#111827] lg:flex">
         <div className="px-6 py-6">
           <LogoMark />
           <p className="mt-4 text-sm font-semibold text-[#f0f4ff]">{organization.name}</p>
@@ -55,7 +80,7 @@ export default function App() {
         </div>
 
         <nav className="space-y-1 px-3">
-          {navItem("/", "Dashboard")}
+          {navItem("/dashboard", "Dashboard")}
           {navItem("/retailers", "Retailers")}
           {navItem("/review", "Flagged Payments")}
         </nav>
@@ -74,7 +99,7 @@ export default function App() {
         </div>
       </aside>
 
-      <main className="ml-[240px] min-h-screen p-8">
+      <main className="min-w-0 p-4 sm:p-6 lg:ml-[240px] lg:p-8">
         <Outlet />
       </main>
     </div>

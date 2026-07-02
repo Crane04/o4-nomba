@@ -60,7 +60,7 @@ export default function ReviewPage() {
           <EmptyState>No flagged payments in the queue.</EmptyState>
         ) : (
           transfers.map((transfer) => (
-            <article key={transfer.id} className="panel p-6">
+            <article key={transfer.id} className="panel p-4 sm:p-6">
               <div className="flex flex-col justify-between gap-4 md:flex-row md:items-start">
                 <div>
                   <p className="font-mono text-3xl font-semibold text-[#f0f4ff]">{formatCurrency(transfer.amount)}</p>
@@ -95,12 +95,12 @@ export default function ReviewPage() {
                         <MiniScore label="History" score={match.historyScore} />
                       </div>
                       <p className="mt-4 text-sm italic text-[#8892a4]">{match.reasoning}</p>
-                      <div className="mt-5 flex flex-wrap gap-3">
+                      <div className="mt-5 grid gap-3 sm:flex sm:flex-wrap">
                         <button
                           type="button"
                           onClick={() => resolveCandidate(match.id)}
                           disabled={actingMatchId !== null}
-                          className="primary-button"
+                          className="primary-button justify-center"
                         >
                           {actingMatchId === match.id ? "Confirming..." : "Confirm match"}
                         </button>
@@ -108,7 +108,7 @@ export default function ReviewPage() {
                           type="button"
                           onClick={() => rejectCandidate(match.id)}
                           disabled={actingMatchId !== null}
-                          className="outline-button"
+                          className="outline-button justify-center"
                         >
                           {actingMatchId === match.id ? "Updating..." : "Not a match"}
                         </button>

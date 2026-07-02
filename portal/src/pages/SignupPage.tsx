@@ -12,7 +12,7 @@ export default function SignupPage() {
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
-  if (organization) return <Navigate to="/" replace />;
+  if (organization) return <Navigate to="/dashboard" replace />;
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -21,7 +21,7 @@ export default function SignupPage() {
 
     try {
       await signup(name, email, password);
-      navigate("/", { replace: true });
+      navigate("/dashboard", { replace: true });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Signup failed");
     } finally {

@@ -51,7 +51,7 @@ export default function DashboardPage() {
         </p>
       </section>
 
-      <section className="grid gap-6 md:grid-cols-4">
+      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <Metric label="Total Retailers" value={String(summary.totalRetailers)} tone="blue" />
         <Metric label="Total Invoiced" value={formatCurrency(summary.totalInvoiced)} tone="blue" />
         <Metric label="Amount Collected" value={formatCurrency(summary.amountCollected)} tone="green" />
@@ -72,7 +72,7 @@ export default function DashboardPage() {
             {recentTransfers.map((transfer) => (
               <div
                 key={transfer.id}
-                className="grid gap-3 border-b border-[rgba(255,255,255,0.04)] px-6 py-4 last:border-b-0 md:grid-cols-[1fr_160px_150px_150px] md:items-center"
+                className="grid gap-3 border-b border-[rgba(255,255,255,0.04)] px-4 py-4 last:border-b-0 sm:px-6 md:grid-cols-[1fr_160px_120px_150px] md:items-center"
               >
                 <div>
                   <p className="text-sm font-medium text-[#f0f4ff]">{transfer.account.identity.currentName}</p>
@@ -97,7 +97,7 @@ function Metric({ label, value, tone }: { label: string; value: string; tone: "b
     <div className="metric relative">
       <span className={`absolute right-6 top-6 h-2.5 w-2.5 rounded-full ${dot}`} />
       <p className="text-xs font-semibold uppercase tracking-widest text-[#8892a4]">{label}</p>
-      <p className="mt-5 font-mono text-3xl font-semibold text-[#f0f4ff]">{value}</p>
+      <p className="mt-5 break-words font-mono text-2xl font-semibold text-[#f0f4ff] sm:text-3xl">{value}</p>
     </div>
   );
 }

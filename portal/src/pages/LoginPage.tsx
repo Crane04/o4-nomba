@@ -12,7 +12,7 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
-  const redirectTo = (location.state as { from?: { pathname?: string } } | null)?.from?.pathname ?? "/";
+  const redirectTo = (location.state as { from?: { pathname?: string } } | null)?.from?.pathname ?? "/dashboard";
 
   if (organization) return <Navigate to={redirectTo} replace />;
 

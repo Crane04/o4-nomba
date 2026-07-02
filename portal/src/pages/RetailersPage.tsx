@@ -76,7 +76,7 @@ export default function RetailersPage() {
         </div>
       </section>
 
-      <section className="panel p-6">
+      <section className="panel p-4 sm:p-6">
         <div className="flex flex-col justify-between gap-5 lg:flex-row lg:items-end">
           <div>
             <h2 className="text-sm font-semibold text-[#f0f4ff]">Create Retailer Account</h2>
@@ -84,7 +84,7 @@ export default function RetailersPage() {
               OhFour creates the retailer identity, then provisions a dedicated Nomba virtual account number.
             </p>
           </div>
-          <form onSubmit={createRetailer} className="grid gap-3 md:grid-cols-[minmax(260px,1fr)_130px_180px]">
+          <form onSubmit={createRetailer} className="grid w-full gap-3 md:grid-cols-[minmax(220px,1fr)_120px_170px] lg:w-auto">
             <input
               value={retailerName}
               onChange={(event) => setRetailerName(event.target.value)}
@@ -104,7 +104,7 @@ export default function RetailersPage() {
             <button
               type="submit"
               disabled={creating}
-              className="primary-button"
+              className="primary-button whitespace-nowrap"
             >
               {creating ? "Provisioning..." : "Create + provision"}
             </button>
@@ -124,15 +124,15 @@ export default function RetailersPage() {
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[900px] text-left text-sm">
+            <table className="w-full min-w-[760px] text-left text-sm">
               <thead className="table-head">
                 <tr>
-                  <th className="px-6 py-4 font-semibold">Retailer Name</th>
-                  <th className="px-6 py-4 font-semibold">Business Type</th>
-                  <th className="px-6 py-4 font-semibold">Account Number</th>
-                  <th className="px-6 py-4 font-semibold">Total Outstanding</th>
-                  <th className="px-6 py-4 font-semibold">Status</th>
-                  <th className="w-12 px-6 py-4" />
+                  <th className="px-4 py-4 font-semibold sm:px-6">Retailer Name</th>
+                  <th className="px-4 py-4 font-semibold sm:px-6">Business Type</th>
+                  <th className="px-4 py-4 font-semibold sm:px-6">Account Number</th>
+                  <th className="px-4 py-4 font-semibold sm:px-6">Total Outstanding</th>
+                  <th className="px-4 py-4 font-semibold sm:px-6">Status</th>
+                  <th className="w-12 px-4 py-4 sm:px-6" />
                 </tr>
               </thead>
               <tbody>
@@ -142,14 +142,14 @@ export default function RetailersPage() {
                     onClick={() => navigate(`/retailers/${account.identityId}`)}
                     className="group cursor-pointer border-b border-[rgba(255,255,255,0.04)] transition-colors odd:bg-[rgba(255,255,255,0.01)] hover:bg-[rgba(255,255,255,0.02)] last:border-b-0"
                   >
-                    <td className="px-6 py-4 font-medium text-[#f0f4ff]">{account.identity.currentName}</td>
-                    <td className="px-6 py-4 text-[#8892a4]">{getBusinessType(account.identityId)}</td>
-                    <td className="px-6 py-4 font-mono font-semibold text-[#f0f4ff]">{account.accountNumber}</td>
-                    <td className="px-6 py-4 font-mono font-semibold text-[#f0f4ff]">{formatCurrency(outstanding)}</td>
-                    <td className="px-6 py-4">
+                    <td className="px-4 py-4 font-medium text-[#f0f4ff] sm:px-6">{account.identity.currentName}</td>
+                    <td className="px-4 py-4 text-[#8892a4] sm:px-6">{getBusinessType(account.identityId)}</td>
+                    <td className="px-4 py-4 font-mono font-semibold text-[#f0f4ff] sm:px-6">{account.accountNumber}</td>
+                    <td className="px-4 py-4 font-mono font-semibold text-[#f0f4ff] sm:px-6">{formatCurrency(outstanding)}</td>
+                    <td className="px-4 py-4 sm:px-6">
                       <StatusBadge label={status} />
                     </td>
-                    <td className="px-6 py-4 text-right text-[#8892a4] opacity-0 transition-opacity group-hover:opacity-100">
+                    <td className="px-4 py-4 text-right text-[#8892a4] opacity-0 transition-opacity group-hover:opacity-100 sm:px-6">
                       <FiChevronRight className="ml-auto h-4 w-4" />
                     </td>
                   </tr>
