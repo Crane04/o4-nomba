@@ -1,6 +1,6 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
-import { FiArrowLeft, FiExternalLink } from "react-icons/fi";
+import { FiArrowLeft } from "react-icons/fi";
 import { api, ExpectedPayment, Identity, IdentityEvent, Transfer, VirtualAccount } from "../lib/api";
 import {
   formatCurrency,
@@ -107,15 +107,6 @@ export default function RetailerDetailPage() {
           <h1 className="mt-4 page-title">{identity.currentName}</h1>
           <p className="page-copy">{getBusinessType(identity.id)}</p>
         </div>
-        <a
-          href={`http://localhost:5173/identities/${identity.id}`}
-          target="_blank"
-          rel="noreferrer"
-          className="outline-button inline-flex w-full items-center justify-center gap-2 sm:w-auto"
-        >
-          <FiExternalLink className="h-4 w-4" />
-          View in OhFour Dashboard
-        </a>
       </section>
 
       <section className="panel p-4 sm:p-6">
