@@ -10,7 +10,7 @@ export async function createAccount(organizationId: string, identityId: string, 
   const identity = await prisma.customerIdentity.findFirst({ where: { id: identityId, organizationId } });
   if (!identity) return null;
 
-  const accountRef = crypto.randomUUID();
+  const accountRef = `O4${crypto.randomBytes(12).toString("hex")}`;
   let virtualAccount;
   try {
     virtualAccount = await createVirtualAccount(accountRef, identity.currentName);

@@ -91,6 +91,8 @@ DATABASE_URL="postgresql://postgres:postgres@localhost:5432/o4?schema=public"
 PORT=4000
 JWT_SECRET="replace_with_a_long_random_secret"
 NOMBA_WEBHOOK_SECRET="replace_with_real_secret"
+NOMBA_BASE_URL=https://sandbox.nomba.com
+NOMBA_AUTH_URL=https://api.nomba.com
 NOMBA_CLIENT_ID=
 NOMBA_PRIVATE_KEY=
 NOMBA_PARENT_ACCOUNT_ID=

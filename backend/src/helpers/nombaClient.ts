@@ -19,10 +19,10 @@ export async function createVirtualAccount(
   const token = await getAccessToken();
   const parentAccountId = getParentAccountId();
   const subAccountId = getRequiredEnv("NOMBA_SUB_ACCOUNT_ID");
-  const baseUrl = process.env.NOMBA_BASE_URL_SANDBOX ?? "https://sandbox.nomba.com";
+  const baseUrl = getNombaBaseUrl();
   const body: CreateNombaVirtualAccountRequest = {
     accountRef,
-    accountName,
+    accountName: normalizeAccountName(accountName),
     currency,
     accountHolderId: subAccountId,
   };
@@ -39,9 +39,7 @@ export async function createVirtualAccount(
 
   const payload = (await response.json()) as NombaApiResponse<NombaVirtualAccount>;
   if (payload.code !== "00" || !payload.data) {
-    throw new NombaApiError(
-      `Nomba virtual account creation failed: ${payload.description ?? "Unknown error"}`
-    );
+    throw new NombaApiError(`Nomba virtual account creation failed: ${formatNombaError(payload)}`);
   }
 
   return payload.data;
@@ -89,6 +87,26 @@ async function issueAccessToken() {
 
 function getParentAccountId(): string {
   return process.env.NOMBA_PARENT_ACCOUNT_ID ?? getRequiredEnv("NOMBA_ACCOUNT_ID");
+}
+
+function getNombaBaseUrl(): string {
+  return process.env.NOMBA_BASE_URL ?? process.env.NOMBA_BASE_URL_SANDBOX ?? "https://sandbox.nomba.com";
+}
+
+function normalizeAccountName(accountName: string): string {
+  const normalized = accountName
+    .replace(/[^a-zA-Z0-9 ]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  return normalized || "OhFour Customer";
+}
+
+function formatNombaError(payload: NombaApiResponse<unknown>): string {
+  const base = payload.description ?? payload.message ?? "Unknown error";
+  if (!payload.errors) return base;
+
+  return `${base} (${JSON.stringify(payload.errors)})`;
 }
 
 function getRequiredEnv(name: string): string {

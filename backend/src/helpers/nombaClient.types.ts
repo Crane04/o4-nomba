@@ -7,8 +7,10 @@ export interface NombaTokenData {
 export interface NombaApiResponse<T> {
   code: string;
   description?: string;
+  message?: string;
   status?: boolean;
   data?: T;
+  errors?: unknown;
 }
 
 export interface NombaVirtualAccount {
