@@ -29,6 +29,7 @@ app.get("/health", (_req, res) => res.json({ status: "ok", service: "o4" }));
 
 app.use("/auth", authRouter);
 app.use("/webhooks", webhookRouter);
+app.use("/webhook", webhookRouter);
 app.use("/identities", authenticate, identityRouter);
 app.use("/accounts", authenticate, accountsRouter);
 app.use("/expected-payments", authenticate, expectedPaymentsRouter);

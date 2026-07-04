@@ -6,3 +6,4 @@ export const webhookRouter = Router();
 const webhookController = new WebhookController();
 
 webhookRouter.post("/transfers", verifyWebhookSignature, webhookController.receiveTransfer);
+webhookRouter.post("/nomba", verifyWebhookSignature, webhookController.receiveTransfer);
