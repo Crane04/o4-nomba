@@ -26,8 +26,15 @@ export async function createVirtualAccount(
     currency,
     accountHolderId: subAccountId,
   };
+  const virtualAccountUrl = `${baseUrl}/v1/accounts/virtual/${encodeURIComponent(subAccountId)}`;
 
-  const response = await fetch(`${baseUrl}/v1/accounts/virtual`, {
+  console.info("[nomba] creating_virtual_account", {
+    endpoint: "/v1/accounts/virtual/:subAccountId",
+    accountRef,
+    currency,
+  });
+
+  const response = await fetch(virtualAccountUrl, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
