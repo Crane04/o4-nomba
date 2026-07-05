@@ -30,16 +30,18 @@ export default function RetailerDetailPage() {
   const loadRetailer = async () => {
     if (!id) return;
 
-    const [identityResult, accounts, allExpectedPayments, historyResult] = await Promise.all([
+    const [identityResult, accounts] = await Promise.all([
       api.getIdentity(id),
       api.getAccounts(),
-      api.getExpectedPayments(),
-      api.getIdentityHistory(id),
     ]);
 
     const selectedAccount =
       identityResult.virtualAccounts?.[0] ?? accounts.find((candidate) => candidate.identityId === id) ?? null;
     const accountTransfers = selectedAccount ? await api.getAccountTransfers(selectedAccount.id) : [];
+    const [allExpectedPayments, historyResult] = await Promise.all([
+      api.getExpectedPayments(),
+      api.getIdentityHistory(id),
+    ]);
 
     setIdentity(identityResult);
     setAccount(selectedAccount);

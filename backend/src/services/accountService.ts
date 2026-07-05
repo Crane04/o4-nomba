@@ -34,6 +34,8 @@ export async function createAccount(organizationId: string, identityId: string, 
 }
 
 export async function listAccounts(organizationId: string) {
+  await syncRecentNombaTransfers(organizationId);
+
   return prisma.virtualAccount.findMany({
     where: { organizationId },
     include: { identity: true },
