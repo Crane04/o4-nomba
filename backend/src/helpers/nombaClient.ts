@@ -2,6 +2,7 @@ import type {
   NombaApiResponse,
   CreateNombaVirtualAccountRequest,
   NombaTokenData,
+  NombaTransferRecord,
   NombaVirtualAccount,
 } from "./nombaClient.types";
 
@@ -52,6 +53,34 @@ export async function createVirtualAccount(
   return payload.data;
 }
 
+export async function listVirtualAccountTransfers(accountNumber: string): Promise<NombaTransferRecord[]> {
+  const token = await getAccessToken();
+  const parentAccountId = getParentAccountId();
+  const baseUrl = getNombaBaseUrl();
+  const transferPath = getTransferListPath(accountNumber);
+
+  console.info("[nomba] listing_recent_transfers", {
+    endpoint: transferPath.replace(encodeURIComponent(accountNumber), ":accountNumber"),
+    accountNumber,
+  });
+
+  const response = await fetch(`${baseUrl}${transferPath}`, {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+      accountId: parentAccountId,
+    },
+  });
+
+  const payload = (await response.json()) as NombaApiResponse<unknown>;
+  if (payload.code !== "00" || !payload.data) {
+    throw new NombaApiError(`Nomba transfer sync failed: ${formatNombaError(payload)}`);
+  }
+
+  return extractTransferRecords(payload.data);
+}
+
 async function getAccessToken(): Promise<string> {
   if (cachedToken && cachedToken.expiresAtMs - Date.now() > 60_000) {
     return cachedToken.accessToken;
@@ -100,6 +129,13 @@ function getNombaBaseUrl(): string {
   return process.env.NOMBA_BASE_URL ?? process.env.NOMBA_BASE_URL_SANDBOX ?? "https://sandbox.nomba.com";
 }
 
+function getTransferListPath(accountNumber: string): string {
+  const configuredPath =
+    process.env.NOMBA_TRANSFERS_PATH ?? "/v1/transactions/virtual?virtual_account={accountNumber}";
+
+  return configuredPath.replace("{accountNumber}", encodeURIComponent(accountNumber));
+}
+
 function normalizeAccountName(accountName: string): string {
   const normalized = accountName
     .replace(/[^a-zA-Z0-9 ]/g, " ")
@@ -114,6 +150,17 @@ function formatNombaError(payload: NombaApiResponse<unknown>): string {
   if (!payload.errors) return base;
 
   return `${base} (${JSON.stringify(payload.errors)})`;
+}
+
+function extractTransferRecords(data: unknown): NombaTransferRecord[] {
+  if (Array.isArray(data)) return data as NombaTransferRecord[];
+  if (!data || typeof data !== "object") return [];
+
+  const record = data as Record<string, unknown>;
+  const candidates = [record.transactions, record.transfers, record.items, record.content, record.results];
+  const list = candidates.find(Array.isArray);
+
+  return (list ?? []) as NombaTransferRecord[];
 }
 
 function getRequiredEnv(name: string): string {

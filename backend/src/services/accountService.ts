@@ -1,6 +1,7 @@
 import crypto from "node:crypto";
 import { prisma } from "../lib/prisma";
 import { createVirtualAccount, NombaApiError } from "../helpers/nombaClient";
+import { syncRecentNombaTransfers } from "./nombaTransferSyncService";
 
 export class AccountProvisioningError extends Error {
   statusCode = 502;
@@ -41,6 +42,8 @@ export async function listAccounts(organizationId: string) {
 }
 
 export async function listAccountTransfers(organizationId: string, accountId: string) {
+  await syncRecentNombaTransfers(organizationId);
+
   return prisma.transfer.findMany({
     where: { virtualAccountId: accountId, virtualAccount: { organizationId } },
     orderBy: { receivedAt: "desc" },

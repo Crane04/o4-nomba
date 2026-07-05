@@ -1,10 +1,12 @@
 import type { Request, Response } from "express";
 import { getReviewQueue, rejectMatch, resolveMatch } from "../services/reconciliationService";
+import { syncRecentNombaTransfers } from "../services/nombaTransferSyncService";
 import { validateResolveMatch } from "../validators/reconciliationValidator";
 import { sendValidationError } from "../validators/validator";
 
 export class ReconciliationController {
   queue = async (req: Request, res: Response) => {
+    await syncRecentNombaTransfers(req.org!.id);
     const queue = await getReviewQueue(req.org!.id);
     res.json(queue);
   };
