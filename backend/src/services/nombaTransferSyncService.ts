@@ -60,7 +60,17 @@ async function runSync(organizationId: string) {
         continue;
       }
 
-      await processTransferWebhook(payload, { organizationId });
+      const result = await processTransferWebhook(payload, { organizationId });
+      if (result.status === "account_not_found") {
+        console.warn("[nomba-sync] account_not_found", {
+          organizationId,
+          reference: payload.reference,
+          virtualAccountNumber: payload.virtualAccountNumber,
+        });
+        skipped += 1;
+        continue;
+      }
+
       processed += 1;
     }
   }
@@ -79,11 +89,23 @@ function normalizeTransferRecord(
   fallbackAccountNumber: string
 ): NombaTransferPayload | null {
   const amount = normalizeAmount(record.amount);
-  const senderName = firstString(record.senderName, record.senderAccountName, record.sourceAccountName);
-  const reference = firstString(record.reference, record.transactionReference, record.sessionId);
+  const senderName = firstString(
+    record.senderName,
+    record.ktaSenderName,
+    record.senderAccountName,
+    record.sourceAccountName
+  );
+  const reference = firstString(
+    record.reference,
+    record.transactionReference,
+    record.paymentVendorReference,
+    record.billingVendorReference,
+    record.sessionId,
+    record.id
+  );
   const virtualAccountNumber = firstString(
     record.virtualAccountNumber,
-    record.accountNumber,
+    record.recipientAccountNumber,
     record.destinationAccountNumber,
     record.bankAccountNumber,
     fallbackAccountNumber
@@ -96,7 +118,12 @@ function normalizeTransferRecord(
   return {
     amount,
     senderName,
-    senderAccountNumber: firstString(record.senderAccountNumber, record.sourceAccountNumber),
+    senderAccountNumber: firstString(
+      record.senderAccountNumber,
+      record.ktaSenderAccountNumber,
+      record.sourceAccountNumber,
+      record.accountNumber
+    ),
     narration: firstString(record.narration, record.description),
     reference,
     virtualAccountNumber,

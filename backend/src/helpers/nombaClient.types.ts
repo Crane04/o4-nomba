@@ -35,16 +35,22 @@ export interface CreateNombaVirtualAccountRequest {
 export interface NombaTransferRecord {
   amount?: number | string;
   senderName?: string;
+  ktaSenderName?: string;
   senderAccountName?: string;
   sourceAccountName?: string;
   senderAccountNumber?: string;
+  ktaSenderAccountNumber?: string;
   sourceAccountNumber?: string;
   narration?: string;
   description?: string;
   reference?: string;
   transactionReference?: string;
+  paymentVendorReference?: string;
+  billingVendorReference?: string;
+  id?: string;
   sessionId?: string;
   virtualAccountNumber?: string;
+  recipientAccountNumber?: string;
   accountNumber?: string;
   destinationAccountNumber?: string;
   bankAccountNumber?: string;
