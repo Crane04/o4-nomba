@@ -1,6 +1,6 @@
 import { Link, Navigate, Outlet, useLocation } from "react-router-dom";
 import { useEffect } from "react";
-import { FiAlertTriangle, FiGrid, FiLogOut, FiShoppingBag } from "react-icons/fi";
+import { FiAlertTriangle, FiCreditCard, FiGrid, FiLogOut, FiShoppingBag } from "react-icons/fi";
 import { useAuth } from "./lib/auth";
 import { LogoMark } from "./components/LogoMark";
 
@@ -28,7 +28,14 @@ export default function App() {
 
   const navItem = (to: string, label: string) => {
     const active = location.pathname === to || location.pathname.startsWith(`${to}/`);
-    const Icon = to === "/dashboard" ? FiGrid : to === "/retailers" ? FiShoppingBag : FiAlertTriangle;
+    const Icon =
+      to === "/dashboard"
+        ? FiGrid
+        : to === "/retailers"
+          ? FiShoppingBag
+          : to === "/transfers"
+            ? FiCreditCard
+            : FiAlertTriangle;
 
     return (
       <Link
@@ -65,9 +72,10 @@ export default function App() {
             <FiLogOut className="h-4 w-4" />
           </button>
         </div>
-        <nav className="mt-3 grid grid-cols-3 gap-2">
+        <nav className="mt-3 grid grid-cols-4 gap-2">
           {navItem("/dashboard", "Dashboard")}
           {navItem("/retailers", "Retailers")}
+          {navItem("/transfers", "Transfers")}
           {navItem("/review", "Flagged")}
         </nav>
       </header>
@@ -82,6 +90,7 @@ export default function App() {
         <nav className="space-y-1 px-3">
           {navItem("/dashboard", "Dashboard")}
           {navItem("/retailers", "Retailers")}
+          {navItem("/transfers", "Transfers")}
           {navItem("/review", "Flagged Payments")}
         </nav>
 

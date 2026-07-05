@@ -11,6 +11,7 @@ import RetailerDetailPage from "./pages/RetailerDetailPage";
 import RetailersPage from "./pages/RetailersPage";
 import ReviewPage from "./pages/ReviewPage";
 import SignupPage from "./pages/SignupPage";
+import TransfersPage from "./pages/TransfersPage";
 
 document.documentElement.classList.add("dark");
 
@@ -26,6 +27,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="retailers" element={<RetailersPage />} />
             <Route path="retailers/:id" element={<RetailerDetailPage />} />
+            <Route path="transfers" element={<TransfersPage />} />
             <Route path="review" element={<ReviewPage />} />
           </Route>
         </Routes>

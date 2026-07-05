@@ -94,6 +94,16 @@ export interface Transfer {
   status: string;
 }
 
+export interface TransferWithAccount extends Transfer {
+  virtualAccount: VirtualAccount;
+  matches?: Array<{
+    id: string;
+    confidenceScore: number;
+    decision: string;
+    expectedPayment?: Pick<ExpectedPayment, "id" | "label" | "expectedAmount" | "status">;
+  }>;
+}
+
 export interface IdentityEvent {
   id: string;
   type: string;
@@ -151,6 +161,7 @@ export const api = {
       body: JSON.stringify({ identityId }),
     }),
   getAccountTransfers: (id: string) => request<Transfer[]>(`/accounts/${id}/transfers`),
+  getTransfers: () => request<TransferWithAccount[]>("/transfers"),
   getExpectedPayments: (status?: string) =>
     request<ExpectedPayment[]>(`/expected-payments${status ? `?status=${status}` : ""}`),
   createExpectedPayment: (input: {
