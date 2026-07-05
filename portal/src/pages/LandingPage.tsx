@@ -1,5 +1,4 @@
 import { Link } from "react-router-dom";
-import type { IconType } from "react-icons";
 import {
   FiActivity,
   FiArrowRight,
@@ -12,8 +11,11 @@ import {
   FiShield,
   FiZap,
 } from "react-icons/fi";
+import { LandingFeatureCard } from "../components/LandingFeatureCard";
 import { LogoMark } from "../components/LogoMark";
+import { ProductPreview } from "../components/ProductPreview";
 import { useAuth } from "../lib/auth";
+import { ButtonLink } from "../lib/ui";
 
 const stats = [
   { value: "1", label: "account per payer" },
@@ -94,9 +96,9 @@ export default function LandingPage() {
             <a href="#docs" className="transition-colors hover:text-[#f0f4ff]">Docs</a>
           </nav>
 
-          <Link to={dashboardHref} className="primary-button inline-flex items-center gap-2 px-5 py-3">
+          <ButtonLink to={dashboardHref} className="gap-2 px-5 py-3">
             Go to dashboard
-          </Link>
+          </ButtonLink>
         </div>
       </header>
 
@@ -117,10 +119,10 @@ export default function LandingPage() {
         </p>
 
         <div className="mt-10">
-          <Link to={dashboardHref} className="primary-button inline-flex items-center gap-2 px-8 py-4 text-base">
+          <ButtonLink to={dashboardHref} className="gap-2 px-8 py-4 text-base">
             Go to dashboard
             <FiArrowRight className="h-5 w-5" />
-          </Link>
+          </ButtonLink>
         </div>
 
         <div className="mt-16 grid w-full max-w-3xl gap-6 border-t border-[rgba(255,255,255,0.08)] pt-10 sm:grid-cols-3 sm:divide-x sm:divide-[rgba(255,255,255,0.08)]">
@@ -171,7 +173,7 @@ export default function LandingPage() {
 
         <div className="mt-16 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
           {features.map((feature) => (
-            <FeatureCard key={feature.title} {...feature} />
+            <LandingFeatureCard key={feature.title} {...feature} />
           ))}
         </div>
       </section>
@@ -207,10 +209,10 @@ export default function LandingPage() {
         <p className="mx-auto mt-6 max-w-2xl text-base font-medium leading-7 text-[#8892a4]">
           Provision accounts, receive transfers, and resolve exceptions from a single workspace.
         </p>
-        <Link to={dashboardHref} className="primary-button mt-10 inline-flex items-center gap-2 px-8 py-4 text-base">
+        <ButtonLink to={dashboardHref} className="mt-10 gap-2 px-8 py-4 text-base">
           Go to dashboard
           <FiArrowRight className="h-5 w-5" />
-        </Link>
+        </ButtonLink>
       </section>
 
       <footer className="border-t border-[rgba(255,255,255,0.06)] px-4 py-10 sm:px-6 lg:px-8">
@@ -235,87 +237,5 @@ export default function LandingPage() {
         <FiGrid className="h-6 w-6" />
       </Link>
     </main>
-  );
-}
-
-function ProductPreview() {
-  const rows = [
-    ["Amina Stores", "NGN 185,000", "Matched"],
-    ["Riverside Pharmacy", "NGN 72,500", "Review"],
-    ["Prime Mart", "NGN 310,000", "Matched"],
-  ];
-
-  return (
-    <div className="mx-auto overflow-hidden rounded-2xl border border-[rgba(255,255,255,0.08)] bg-[#151b2a] shadow-[0_24px_80px_rgba(0,0,0,0.35)]">
-      <div className="flex items-center border-b border-[rgba(255,255,255,0.06)] px-5 py-4">
-        <div className="flex gap-2">
-          <span className="h-3 w-3 rounded-full bg-[#ef4444]" />
-          <span className="h-3 w-3 rounded-full bg-[#f59e0b]" />
-          <span className="h-3 w-3 rounded-full bg-[#22c55e]" />
-        </div>
-        <div className="mx-auto rounded-lg bg-[#0d1117] px-5 py-1.5 font-mono text-xs font-semibold text-[#8892a4]">
-          app.ohfour.co
-        </div>
-      </div>
-
-      <div className="grid min-h-[360px] md:grid-cols-[240px_1fr]">
-        <aside className="hidden border-r border-[rgba(255,255,255,0.06)] p-5 md:block">
-          <div className="rounded-lg bg-[#17264a] px-4 py-3 text-sm font-semibold text-[#8fb5ff]">Collections</div>
-          {["Dashboard", "Retailers", "Invoices", "Review"].map((item) => (
-            <div key={item} className="mt-4 flex items-center gap-3 px-4 text-sm font-medium text-[#8892a4]">
-              <span className="h-4 w-4 rounded bg-[#20293c]" />
-              {item}
-            </div>
-          ))}
-        </aside>
-
-        <section className="p-5 sm:p-8">
-          <div className="grid gap-3 sm:grid-cols-3">
-            <PreviewMetric label="Invoiced" value="NGN 8.4m" />
-            <PreviewMetric label="Collected" value="NGN 6.9m" />
-            <PreviewMetric label="Review" value="7" />
-          </div>
-          <div className="mt-7 rounded-xl border border-[rgba(255,255,255,0.06)] bg-[#0d1117]">
-            <div className="border-b border-[rgba(255,255,255,0.06)] px-4 py-3 text-left text-sm font-semibold text-[#f0f4ff]">
-              Incoming transfers
-            </div>
-            {rows.map(([name, amount, status]) => (
-              <div key={name} className="grid grid-cols-[1fr_auto] gap-4 border-b border-[rgba(255,255,255,0.05)] px-4 py-4 text-left last:border-b-0 sm:grid-cols-[1fr_150px_90px]">
-                <p className="min-w-0 truncate text-sm font-semibold text-[#f0f4ff]">{name}</p>
-                <p className="font-mono text-sm font-semibold text-[#f0f4ff]">{amount}</p>
-                <span
-                  className={`status-pill ${
-                    status === "Matched" ? "bg-[#1a3a2a] text-[#4ade80]" : "bg-[#3a2a0a] text-[#fbbf24]"
-                  }`}
-                >
-                  {status}
-                </span>
-              </div>
-            ))}
-          </div>
-        </section>
-      </div>
-    </div>
-  );
-}
-
-function PreviewMetric({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-lg bg-[#0d1117] p-4 text-left">
-      <p className="font-mono text-lg font-semibold text-[#f0f4ff]">{value}</p>
-      <p className="mt-1 text-xs font-medium text-[#8892a4]">{label}</p>
-    </div>
-  );
-}
-
-function FeatureCard({ icon: Icon, title, copy }: { icon: IconType; title: string; copy: string }) {
-  return (
-    <article className="rounded-xl border border-[rgba(255,255,255,0.08)] bg-[#151b2a] p-6 sm:p-8">
-      <div className="grid h-12 w-12 place-items-center rounded-xl bg-[#12214a] text-[#5d9cff]">
-        <Icon className="h-5 w-5" />
-      </div>
-      <h3 className="mt-7 text-lg font-semibold text-[#f0f4ff]">{title}</h3>
-      <p className="mt-4 text-sm font-medium leading-7 text-[#8892a4]">{copy}</p>
-    </article>
   );
 }

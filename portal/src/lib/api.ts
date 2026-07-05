@@ -1,3 +1,16 @@
+import type {
+  ExpectedPayment,
+  Identity,
+  IdentityEvent,
+  LoginResponse,
+  MeResponse,
+  RegisterResponse,
+  ReviewTransfer,
+  Transfer,
+  TransferWithAccount,
+  VirtualAccount,
+} from "./types";
+
 const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:4000";
 const TOKEN_KEY = "o4_portal_token";
 
@@ -30,108 +43,6 @@ export async function request<T>(path: string, options?: RequestInit): Promise<T
   }
 
   return res.json();
-}
-
-export interface Organization {
-  id: string;
-  name: string;
-  email: string;
-  apiKey?: string;
-  createdAt?: string;
-}
-
-export interface LoginResponse {
-  token: string;
-  organization: Organization;
-}
-
-export interface RegisterResponse {
-  organization: Organization;
-  apiKey: string;
-}
-
-export interface MeResponse {
-  organization: Pick<Organization, "id" | "name" | "email">;
-}
-
-export interface Identity {
-  id: string;
-  currentName: string;
-  kycTier: number;
-  status: string;
-  virtualAccounts?: VirtualAccount[];
-  expectedPayments?: ExpectedPayment[];
-}
-
-export interface VirtualAccount {
-  id: string;
-  accountNumber: string;
-  bankName: string;
-  status: string;
-  identityId: string;
-  identity: Pick<Identity, "id" | "currentName" | "kycTier" | "status">;
-}
-
-export interface ExpectedPayment {
-  id: string;
-  identityId: string;
-  expectedAmount: number;
-  label: string;
-  dueDate: string | null;
-  status: string;
-  createdAt: string;
-  identity?: Pick<Identity, "id" | "currentName" | "kycTier" | "status">;
-}
-
-export interface Transfer {
-  id: string;
-  virtualAccountId: string;
-  amount: number;
-  senderName: string;
-  reference: string | null;
-  narration?: string | null;
-  receivedAt: string;
-  status: string;
-}
-
-export interface TransferWithAccount extends Transfer {
-  virtualAccount: VirtualAccount;
-  matches?: Array<{
-    id: string;
-    confidenceScore: number;
-    decision: string;
-    expectedPayment?: Pick<ExpectedPayment, "id" | "label" | "expectedAmount" | "status">;
-  }>;
-}
-
-export interface IdentityEvent {
-  id: string;
-  type: string;
-  previousValue: string | null;
-  newValue: string | null;
-  reason: string | null;
-  createdAt: string;
-}
-
-export interface ReconciliationMatch {
-  id: string;
-  expectedPaymentId: string;
-  confidenceScore: number;
-  amountScore: number;
-  nameScore: number;
-  timingScore: number;
-  historyScore: number;
-  reasoning: string;
-  decision: string;
-  expectedPayment: {
-    label: string;
-    expectedAmount: number;
-    identity: { currentName: string };
-  };
-}
-
-export interface ReviewTransfer extends Transfer {
-  matches: ReconciliationMatch[];
 }
 
 export const api = {

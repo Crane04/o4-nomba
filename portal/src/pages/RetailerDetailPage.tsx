@@ -1,7 +1,7 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { FiArrowLeft } from "react-icons/fi";
-import { api, ExpectedPayment, Identity, IdentityEvent, Transfer, VirtualAccount } from "../lib/api";
+import { HistoryItem } from "../components/HistoryItem";
 import {
   formatCurrency,
   formatDate,
@@ -10,49 +10,31 @@ import {
   isCollectedStatus,
   transferDisplayStatus,
 } from "../lib/collections";
-import { EmptyState, ErrorState, StatusBadge } from "../lib/ui";
+import { usePortalData, useRetailerDetail } from "../lib/portalData";
+import { Button, EmptyState, ErrorState, LoadingState, Metric, SectionHeader, StatusBadge } from "../lib/ui";
 
 export default function RetailerDetailPage() {
   const { id } = useParams<{ id: string }>();
-  const [identity, setIdentity] = useState<Identity | null>(null);
-  const [account, setAccount] = useState<VirtualAccount | null>(null);
-  const [expectedPayments, setExpectedPayments] = useState<ExpectedPayment[]>([]);
-  const [transfers, setTransfers] = useState<Transfer[]>([]);
-  const [history, setHistory] = useState<IdentityEvent[]>([]);
+  const { createInvoice: createInvoiceRecord, loadRetailerDetail } = usePortalData();
+  const detail = useRetailerDetail(id);
   const [copied, setCopied] = useState(false);
-  const [error, setError] = useState("");
   const [invoiceLabel, setInvoiceLabel] = useState("");
   const [invoiceAmount, setInvoiceAmount] = useState("");
   const [invoiceDueDate, setInvoiceDueDate] = useState("");
   const [invoiceError, setInvoiceError] = useState("");
   const [creatingInvoice, setCreatingInvoice] = useState(false);
 
-  const loadRetailer = async () => {
-    if (!id) return;
-
-    const [identityResult, accounts] = await Promise.all([
-      api.getIdentity(id),
-      api.getAccounts(),
-    ]);
-
-    const selectedAccount =
-      identityResult.virtualAccounts?.[0] ?? accounts.find((candidate) => candidate.identityId === id) ?? null;
-    const accountTransfers = selectedAccount ? await api.getAccountTransfers(selectedAccount.id) : [];
-    const [allExpectedPayments, historyResult] = await Promise.all([
-      api.getExpectedPayments(),
-      api.getIdentityHistory(id),
-    ]);
-
-    setIdentity(identityResult);
-    setAccount(selectedAccount);
-    setExpectedPayments(allExpectedPayments.filter((payment) => payment.identityId === id));
-    setTransfers(accountTransfers);
-    setHistory(historyResult);
-  };
-
   useEffect(() => {
-    loadRetailer().catch((err: Error) => setError(err.message));
-  }, [id]);
+    if (id) loadRetailerDetail(id);
+  }, [id, loadRetailerDetail]);
+
+  const { identity, account, expectedPayments, transfers, history } = detail?.data ?? {
+    identity: null,
+    account: null,
+    expectedPayments: [],
+    transfers: [],
+    history: [],
+  };
 
   const totals = useMemo(() => {
     const invoiced = expectedPayments.reduce((sum, payment) => sum + payment.expectedAmount, 0);
@@ -78,7 +60,7 @@ export default function RetailerDetailPage() {
     setCreatingInvoice(true);
 
     try {
-      await api.createExpectedPayment({
+      await createInvoiceRecord({
         identityId: id,
         expectedAmount: Number(invoiceAmount),
         label: invoiceLabel,
@@ -87,7 +69,6 @@ export default function RetailerDetailPage() {
       setInvoiceLabel("");
       setInvoiceAmount("");
       setInvoiceDueDate("");
-      await loadRetailer();
     } catch (err) {
       setInvoiceError(err instanceof Error ? err.message : "Could not create invoice");
     } finally {
@@ -95,8 +76,8 @@ export default function RetailerDetailPage() {
     }
   };
 
-  if (error) return <ErrorState message={error} />;
-  if (!identity) return <EmptyState>Loading retailer profile...</EmptyState>;
+  if (detail?.error) return <ErrorState message={detail.error} />;
+  if (detail?.loading || !identity) return <LoadingState label="Loading retailer profile..." />;
 
   return (
     <div className="space-y-8">
@@ -123,14 +104,15 @@ export default function RetailerDetailPage() {
             </p>
             {account?.bankName ? <p className="mt-1 text-sm font-medium text-[#8892a4]">{account.bankName}</p> : null}
           </div>
-          <button
+          <Button
             type="button"
+            variant="outline"
             onClick={copyAccount}
             disabled={!account?.accountNumber}
-            className="outline-button w-full sm:w-auto"
+            className="w-full sm:w-auto"
           >
             {copied ? "Copied" : "Copy"}
-          </button>
+          </Button>
         </div>
       </section>
 
@@ -169,13 +151,13 @@ export default function RetailerDetailPage() {
             type="date"
             className="input-field"
           />
-          <button
+          <Button
             type="submit"
             disabled={creatingInvoice}
-            className="primary-button"
+            className="justify-center"
           >
             {creatingInvoice ? "Creating..." : "Create invoice"}
-          </button>
+          </Button>
           {invoiceError ? (
             <div className="rounded-lg border border-[#f87171]/20 bg-[#2a1a1a] px-3 py-2 text-sm font-medium text-[#f87171] md:col-span-4">
               {invoiceError}
@@ -250,106 +232,6 @@ export default function RetailerDetailPage() {
           </div>
         )}
       </section>
-    </div>
-  );
-}
-
-function HistoryItem({ event }: { event: IdentityEvent }) {
-  const formatted = formatHistoryEvent(event);
-
-  return (
-    <div className="relative border-l border-[rgba(255,255,255,0.08)] pl-5">
-      <span className="absolute -left-[5px] top-1 h-2.5 w-2.5 rounded-full bg-[#3b6ef8]" />
-      <div className="flex flex-col justify-between gap-2 md:flex-row">
-        <div>
-          <p className="text-sm font-medium text-[#f0f4ff]">{formatted.title}</p>
-          <p className="mt-1 text-sm text-[#8892a4]">{formatted.description}</p>
-          {event.reason ? <p className="mt-1 text-xs text-[#8892a4]">Reason: {event.reason}</p> : null}
-        </div>
-        <p className="text-xs text-[#8892a4]">{formatDateTime(event.createdAt)}</p>
-      </div>
-    </div>
-  );
-}
-
-function formatHistoryEvent(event: IdentityEvent) {
-  const previous = parseEventValue(event.previousValue);
-  const next = parseEventValue(event.newValue);
-
-  if (event.type === "created") {
-    const name = next.name ?? "this retailer";
-    const tier = next.kycTier ? `, KYC Tier ${next.kycTier}` : "";
-    return {
-      title: "Retailer created",
-      description: `Created ${name}${tier}.`,
-    };
-  }
-
-  if (event.type === "renamed") {
-    return {
-      title: "Retailer renamed",
-      description: `Changed name from ${previous.name ?? "previous name"} to ${next.name ?? "new name"}.`,
-    };
-  }
-
-  if (event.type === "kyc_tier_changed") {
-    return {
-      title: "KYC tier changed",
-      description: `Changed from Tier ${previous.kycTier ?? "unknown"} to Tier ${next.kycTier ?? "unknown"}.`,
-    };
-  }
-
-  if (event.type === "closed") {
-    return {
-      title: "Retailer closed",
-      description: "Closed this retailer account.",
-    };
-  }
-
-  return {
-    title: event.type.replaceAll("_", " "),
-    description: describeGenericChange(previous, next),
-  };
-}
-
-function parseEventValue(value: string | null) {
-  if (!value) return {} as { name?: string; kycTier?: number; value?: string };
-
-  try {
-    const parsed = JSON.parse(value) as Record<string, unknown>;
-    return {
-      name: typeof parsed.name === "string" ? parsed.name : undefined,
-      kycTier: typeof parsed.kycTier === "number" ? parsed.kycTier : undefined,
-      value,
-    };
-  } catch {
-    return { value };
-  }
-}
-
-function describeGenericChange(
-  previous: { name?: string; kycTier?: number; value?: string },
-  next: { name?: string; kycTier?: number; value?: string }
-) {
-  const oldValue = previous.name ?? previous.kycTier ?? previous.value ?? "empty";
-  const newValue = next.name ?? next.kycTier ?? next.value ?? "empty";
-  return `Changed from ${oldValue} to ${newValue}.`;
-}
-
-function Metric({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="metric">
-      <p className="text-xs font-semibold uppercase tracking-widest text-[#8892a4]">{label}</p>
-      <p className="mt-4 break-words font-mono text-xl font-semibold text-[#f0f4ff] sm:text-2xl">{value}</p>
-    </div>
-  );
-}
-
-function SectionHeader({ title, copy }: { title: string; copy: string }) {
-  return (
-    <div className="border-b border-[rgba(255,255,255,0.04)] px-4 py-5 sm:px-6">
-      <h2 className="text-sm font-semibold text-[#f0f4ff]">{title}</h2>
-      <p className="mt-1 text-sm text-[#8892a4]">{copy}</p>
     </div>
   );
 }

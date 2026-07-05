@@ -1,21 +1,20 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo } from "react";
 import {
-  CollectionsData,
   formatCurrency,
   formatDateTime,
   isCollectedStatus,
-  loadCollectionsData,
   transferDisplayStatus,
 } from "../lib/collections";
-import { EmptyState, ErrorState, StatusBadge } from "../lib/ui";
+import { usePortalData } from "../lib/portalData";
+import { EmptyState, ErrorState, LoadingState, Metric, StatusBadge } from "../lib/ui";
 
 export default function DashboardPage() {
-  const [data, setData] = useState<CollectionsData | null>(null);
-  const [error, setError] = useState("");
+  const { collections, loadCollections } = usePortalData();
+  const { data, loading, error } = collections;
 
   useEffect(() => {
-    loadCollectionsData().then(setData).catch((err: Error) => setError(err.message));
-  }, []);
+    loadCollections();
+  }, [loadCollections]);
 
   const summary = useMemo(() => {
     const totalInvoiced = data?.expectedPayments.reduce((sum, payment) => sum + payment.expectedAmount, 0) ?? 0;
@@ -63,7 +62,11 @@ export default function DashboardPage() {
           <h2 className="text-sm font-semibold text-[#f0f4ff]">Recent Activity</h2>
         </div>
 
-        {recentTransfers.length === 0 ? (
+        {loading ? (
+          <div className="p-6">
+            <LoadingState label="Loading collection activity..." />
+          </div>
+        ) : recentTransfers.length === 0 ? (
           <div className="p-6">
             <EmptyState>No transfer activity yet.</EmptyState>
           </div>
@@ -86,18 +89,6 @@ export default function DashboardPage() {
           </div>
         )}
       </section>
-    </div>
-  );
-}
-
-function Metric({ label, value, tone }: { label: string; value: string; tone: "blue" | "green" | "amber" }) {
-  const dot = tone === "green" ? "bg-[#4ade80]" : tone === "amber" ? "bg-[#fbbf24]" : "bg-[#3b6ef8]";
-
-  return (
-    <div className="metric relative">
-      <span className={`absolute right-6 top-6 h-2.5 w-2.5 rounded-full ${dot}`} />
-      <p className="text-xs font-semibold uppercase tracking-widest text-[#8892a4]">{label}</p>
-      <p className="mt-5 break-words font-mono text-2xl font-semibold text-[#f0f4ff] sm:text-3xl">{value}</p>
     </div>
   );
 }

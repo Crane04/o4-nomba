@@ -1,4 +1,5 @@
-import { api, ExpectedPayment, Identity, Transfer, VirtualAccount } from "./api";
+import { api } from "./api";
+import type { AccountTransfer, CollectionsData, ExpectedPayment } from "./types";
 
 const BUSINESS_TYPE_BY_ID: Record<string, string> = {};
 
@@ -50,17 +51,6 @@ export function paymentStatus(invoiced: number, collected: number) {
   if (invoiced > 0 && collected >= invoiced) return "Cleared";
   if (collected > 0) return "Partial";
   return "Outstanding";
-}
-
-export interface AccountTransfer extends Transfer {
-  account: VirtualAccount;
-}
-
-export interface CollectionsData {
-  identities: Identity[];
-  accounts: VirtualAccount[];
-  expectedPayments: ExpectedPayment[];
-  transfers: AccountTransfer[];
 }
 
 export async function loadCollectionsData(): Promise<CollectionsData> {

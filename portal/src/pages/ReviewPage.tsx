@@ -1,28 +1,33 @@
 import { useEffect, useState } from "react";
-import { api, ReviewTransfer } from "../lib/api";
 import { useAuth } from "../lib/auth";
 import { formatCurrency, formatDateTime } from "../lib/collections";
-import { EmptyState, ErrorState } from "../lib/ui";
+import { usePortalData } from "../lib/portalData";
+import { MiniScore } from "../components/MiniScore";
+import { ScoreBar } from "../components/ScoreBar";
+import { Button, EmptyState, ErrorState, LoadingState } from "../lib/ui";
 
 export default function ReviewPage() {
   const { organization } = useAuth();
-  const [transfers, setTransfers] = useState<ReviewTransfer[]>([]);
-  const [error, setError] = useState("");
+  const {
+    reviewQueue,
+    loadReviewQueue,
+    resolveCandidate: resolveReviewCandidate,
+    rejectCandidate: rejectReviewCandidate,
+  } = usePortalData();
+  const { data: transfers, loading, error } = reviewQueue;
   const [actionError, setActionError] = useState("");
   const [actingMatchId, setActingMatchId] = useState<string | null>(null);
 
-  const loadQueue = () => api.getReviewQueue().then(setTransfers).catch((err: Error) => setError(err.message));
-
   useEffect(() => {
-    loadQueue();
-  }, []);
+    loadReviewQueue();
+  }, [loadReviewQueue]);
 
   const resolveCandidate = async (matchId: string) => {
-    await runMatchAction(matchId, () => api.resolveMatch(matchId, organization?.email ?? "portal"));
+    await runMatchAction(matchId, () => resolveReviewCandidate(matchId, organization?.email ?? "portal"));
   };
 
   const rejectCandidate = async (matchId: string) => {
-    await runMatchAction(matchId, () => api.rejectMatch(matchId, organization?.email ?? "portal"));
+    await runMatchAction(matchId, () => rejectReviewCandidate(matchId, organization?.email ?? "portal"));
   };
 
   const runMatchAction = async (matchId: string, action: () => Promise<unknown>) => {
@@ -31,7 +36,6 @@ export default function ReviewPage() {
 
     try {
       await action();
-      await loadQueue();
     } catch (err) {
       setActionError(err instanceof Error ? err.message : "Could not update match");
     } finally {
@@ -56,7 +60,9 @@ export default function ReviewPage() {
       </section>
 
       <section className="space-y-6">
-        {transfers.length === 0 ? (
+        {loading ? (
+          <LoadingState label="Loading flagged payments..." />
+        ) : transfers.length === 0 ? (
           <EmptyState>No flagged payments in the queue.</EmptyState>
         ) : (
           transfers.map((transfer) => (
@@ -96,22 +102,23 @@ export default function ReviewPage() {
                       </div>
                       <p className="mt-4 text-sm italic text-[#8892a4]">{match.reasoning}</p>
                       <div className="mt-5 grid gap-3 sm:flex sm:flex-wrap">
-                        <button
+                        <Button
                           type="button"
                           onClick={() => resolveCandidate(match.id)}
                           disabled={actingMatchId !== null}
-                          className="primary-button justify-center"
+                          className="justify-center"
                         >
                           {actingMatchId === match.id ? "Confirming..." : "Confirm match"}
-                        </button>
-                        <button
+                        </Button>
+                        <Button
                           type="button"
+                          variant="outline"
                           onClick={() => rejectCandidate(match.id)}
                           disabled={actingMatchId !== null}
-                          className="outline-button justify-center"
+                          className="justify-center"
                         >
                           {actingMatchId === match.id ? "Updating..." : "Not a match"}
-                        </button>
+                        </Button>
                       </div>
                     </div>
                   ))
@@ -125,34 +132,6 @@ export default function ReviewPage() {
           ))
         )}
       </section>
-    </div>
-  );
-}
-
-function ScoreBar({ label, score }: { label: string; score: number }) {
-  return (
-    <div className="mt-4">
-      <div className="flex items-center justify-between text-xs">
-        <span className="font-medium text-[#8892a4]">{label}</span>
-        <span className="font-mono font-semibold text-[#f0f4ff]">{Math.round(score * 100)}%</span>
-      </div>
-      <div className="mt-2 h-2 rounded-full bg-[#1e2535]">
-        <div className="h-2 rounded-full bg-[#3b6ef8]" style={{ width: `${Math.round(score * 100)}%` }} />
-      </div>
-    </div>
-  );
-}
-
-function MiniScore({ label, score }: { label: string; score: number }) {
-  return (
-    <div>
-      <div className="flex items-center justify-between text-[11px] text-[#8892a4]">
-        <span>{label}</span>
-        <span className="font-mono">{Math.round(score * 100)}%</span>
-      </div>
-      <div className="mt-1.5 h-1.5 rounded-full bg-[#1e2535]">
-        <div className="h-1.5 rounded-full bg-[#3b6ef8]" style={{ width: `${Math.round(score * 100)}%` }} />
-      </div>
     </div>
   );
 }

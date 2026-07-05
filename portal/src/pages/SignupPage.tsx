@@ -2,6 +2,7 @@ import { FormEvent, useState } from "react";
 import { Link, Navigate, useNavigate } from "react-router-dom";
 import { useAuth } from "../lib/auth";
 import { LogoMark } from "../components/LogoMark";
+import { Button } from "../lib/ui";
 
 export default function SignupPage() {
   const { organization, signup } = useAuth();
@@ -85,13 +86,13 @@ export default function SignupPage() {
               </div>
             ) : null}
 
-            <button
+            <Button
               type="submit"
               disabled={submitting}
-              className="primary-button w-full justify-center py-3"
+              className="w-full justify-center py-3"
             >
               {submitting ? "Creating workspace..." : "Create workspace"}
-            </button>
+            </Button>
           </form>
 
           <p className="mt-5 text-center text-sm text-[#8892a4]">

@@ -1,13 +1,6 @@
 import { createContext, ReactNode, useContext, useEffect, useMemo, useState } from "react";
-import { api, clearStoredToken, getStoredToken, Organization, storeToken } from "./api";
-
-interface AuthContextValue {
-  organization: Organization | null;
-  loading: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  signup: (name: string, email: string, password: string) => Promise<void>;
-  logout: () => void;
-}
+import { api, clearStoredToken, getStoredToken, storeToken } from "./api";
+import type { AuthContextValue, Organization } from "./types";
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 

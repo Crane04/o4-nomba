@@ -1,32 +1,28 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { FiChevronRight } from "react-icons/fi";
-import { api } from "../lib/api";
 import {
-  CollectionsData,
   collectedTotalFor,
   formatCurrency,
   getBusinessType,
   invoiceTotalFor,
-  loadCollectionsData,
   paymentStatus,
 } from "../lib/collections";
-import { EmptyState, ErrorState, StatusBadge } from "../lib/ui";
+import { usePortalData } from "../lib/portalData";
+import { Button, EmptyState, ErrorState, LoadingState, StatusBadge } from "../lib/ui";
 
 export default function RetailersPage() {
   const navigate = useNavigate();
-  const [data, setData] = useState<CollectionsData | null>(null);
-  const [error, setError] = useState("");
+  const { collections, createRetailer: createRetailerAccount, loadCollections } = usePortalData();
+  const { data, loading, error } = collections;
   const [retailerName, setRetailerName] = useState("");
   const [kycTier, setKycTier] = useState(1);
   const [creating, setCreating] = useState(false);
   const [createError, setCreateError] = useState("");
 
-  const refresh = () => loadCollectionsData().then(setData).catch((err: Error) => setError(err.message));
-
   useEffect(() => {
-    refresh();
-  }, []);
+    loadCollections();
+  }, [loadCollections]);
 
   const rows = useMemo(
     () =>
@@ -46,17 +42,15 @@ export default function RetailersPage() {
 
   if (error) return <ErrorState message={error} />;
 
-  const createRetailer = async (event: FormEvent<HTMLFormElement>) => {
+  const submitRetailer = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setCreateError("");
     setCreating(true);
 
     try {
-      const identity = await api.createIdentity(retailerName, kycTier);
-      await api.createAccount(identity.id);
+      const identity = await createRetailerAccount(retailerName, kycTier);
       setRetailerName("");
       setKycTier(1);
-      await refresh();
       navigate(`/retailers/${identity.id}`);
     } catch (err) {
       setCreateError(err instanceof Error ? err.message : "Could not create retailer account");
@@ -84,7 +78,7 @@ export default function RetailersPage() {
               OhFour creates the retailer identity, then provisions a dedicated Nomba virtual account number.
             </p>
           </div>
-          <form onSubmit={createRetailer} className="grid w-full gap-3 md:grid-cols-[minmax(220px,1fr)_120px_170px] lg:w-auto">
+          <form onSubmit={submitRetailer} className="grid w-full gap-3 md:grid-cols-[minmax(220px,1fr)_120px_170px] lg:w-auto">
             <input
               value={retailerName}
               onChange={(event) => setRetailerName(event.target.value)}
@@ -101,13 +95,13 @@ export default function RetailersPage() {
               <option value={2}>Tier 2</option>
               <option value={3}>Tier 3</option>
             </select>
-            <button
+            <Button
               type="submit"
               disabled={creating}
-              className="primary-button whitespace-nowrap"
+              className="whitespace-nowrap"
             >
               {creating ? "Provisioning..." : "Create + provision"}
-            </button>
+            </Button>
           </form>
         </div>
         {createError ? (
@@ -118,7 +112,11 @@ export default function RetailersPage() {
       </section>
 
       <section className="panel">
-        {rows.length === 0 ? (
+        {loading ? (
+          <div className="p-5">
+            <LoadingState label="Loading retailer accounts..." />
+          </div>
+        ) : rows.length === 0 ? (
           <div className="p-5">
             <EmptyState>No retailer accounts found.</EmptyState>
           </div>

@@ -1,7 +1,4 @@
-interface LogoMarkProps {
-  size?: "sm" | "md" | "lg";
-  centered?: boolean;
-}
+import type { LogoMarkProps } from "../lib/types";
 
 const sizes = {
   sm: "h-10 w-10 text-[13px]",

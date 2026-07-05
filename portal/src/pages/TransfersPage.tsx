@@ -1,16 +1,16 @@
 import { useEffect, useMemo, useState } from "react";
-import { api, TransferWithAccount } from "../lib/api";
 import { formatCurrency, formatDateTime, isCollectedStatus, transferDisplayStatus } from "../lib/collections";
-import { EmptyState, ErrorState, StatusBadge } from "../lib/ui";
+import { usePortalData } from "../lib/portalData";
+import { EmptyState, ErrorState, LoadingState, Metric, StatusBadge } from "../lib/ui";
 
 export default function TransfersPage() {
-  const [transfers, setTransfers] = useState<TransferWithAccount[]>([]);
+  const { transfers: transfersState, loadTransfers } = usePortalData();
+  const { data: transfers, loading, error } = transfersState;
   const [query, setQuery] = useState("");
-  const [error, setError] = useState("");
 
   useEffect(() => {
-    api.getTransfers().then(setTransfers).catch((err: Error) => setError(err.message));
-  }, []);
+    loadTransfers();
+  }, [loadTransfers]);
 
   const filtered = useMemo(() => {
     const term = query.trim().toLowerCase();
@@ -64,7 +64,11 @@ export default function TransfersPage() {
       </section>
 
       <section className="panel">
-        {filtered.length === 0 ? (
+        {loading ? (
+          <div className="p-5">
+            <LoadingState label="Loading transfers..." />
+          </div>
+        ) : filtered.length === 0 ? (
           <div className="p-5">
             <EmptyState>No transfers found.</EmptyState>
           </div>
@@ -108,15 +112,6 @@ export default function TransfersPage() {
           </div>
         )}
       </section>
-    </div>
-  );
-}
-
-function Metric({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="metric">
-      <p className="text-xs font-semibold uppercase tracking-widest text-[#8892a4]">{label}</p>
-      <p className="mt-4 break-words font-mono text-2xl font-semibold text-[#f0f4ff]">{value}</p>
     </div>
   );
 }

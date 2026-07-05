@@ -2,7 +2,9 @@ import { Link, Navigate, Outlet, useLocation } from "react-router-dom";
 import { useEffect } from "react";
 import { FiAlertTriangle, FiCreditCard, FiGrid, FiLogOut, FiShoppingBag } from "react-icons/fi";
 import { useAuth } from "./lib/auth";
+import { PortalDataProvider } from "./lib/portalData";
 import { LogoMark } from "./components/LogoMark";
+import { Button, IconButton } from "./lib/ui";
 
 export default function App() {
   const location = useLocation();
@@ -63,14 +65,13 @@ export default function App() {
               <p className="text-xs text-[#8892a4]">Collections Portal</p>
             </div>
           </div>
-          <button
+          <IconButton
             type="button"
             onClick={logout}
-            className="grid h-9 w-9 shrink-0 place-items-center rounded-lg border border-[rgba(255,255,255,0.08)] text-[#8892a4]"
             aria-label="Logout"
           >
             <FiLogOut className="h-4 w-4" />
-          </button>
+          </IconButton>
         </div>
         <nav className="mt-3 grid grid-cols-4 gap-2">
           {navItem("/dashboard", "Dashboard")}
@@ -97,20 +98,23 @@ export default function App() {
         <div className="mt-auto border-t border-[rgba(255,255,255,0.06)] px-6 py-5">
           <p className="text-sm font-medium text-[#f0f4ff]">{organization.name}</p>
           <p className="mt-1 break-all text-xs text-[#8892a4]">{organization.email}</p>
-          <button
+          <Button
             type="button"
+            variant="outline"
             onClick={logout}
-            className="mt-4 inline-flex items-center gap-2 text-sm font-medium text-[#8892a4] transition-colors hover:text-[#3b6ef8]"
+            className="mt-4 gap-2 border-transparent px-0 text-[#8892a4] hover:bg-transparent hover:text-[#3b6ef8]"
           >
             <FiLogOut className="h-4 w-4" />
             Logout
-          </button>
+          </Button>
         </div>
       </aside>
 
-      <main className="min-w-0 p-4 sm:p-6 lg:ml-[240px] lg:p-8">
-        <Outlet />
-      </main>
+      <PortalDataProvider>
+        <main className="min-w-0 p-4 sm:p-6 lg:ml-[240px] lg:p-8">
+          <Outlet />
+        </main>
+      </PortalDataProvider>
     </div>
   );
 }
