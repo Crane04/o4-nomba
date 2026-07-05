@@ -52,6 +52,16 @@ describe("scoreName", () => {
   it("is case and whitespace insensitive", () => {
     expect(scoreName("  adeola   johnson ", ["Adeola Johnson"])).toBe(1);
   });
+
+  it("scores reordered multi-part names highly", () => {
+    const score = scoreName("SAUBANA MAYOWA YUSUF", ["Yusuf Saubana Mayowa"]);
+    expect(score).toBeGreaterThanOrEqual(0.9);
+  });
+
+  it("scores two matching tokens out of three highly enough for identity matching", () => {
+    const score = scoreName("SAUBANA MAYOWA YUSUF", ["Yusuf Saubana Retail"]);
+    expect(score).toBeGreaterThanOrEqual(0.9);
+  });
 });
 
 describe("scoreTiming", () => {
@@ -78,6 +88,10 @@ describe("scoreHistory", () => {
 
   it("returns 1.0 when the sender has paid this identity before", () => {
     expect(scoreHistory("Adeola Johnson", ["Adeola Johnson", "Tunde Bakare"])).toBe(1);
+  });
+
+  it("recognizes reordered prior sender names as history", () => {
+    expect(scoreHistory("SAUBANA MAYOWA YUSUF", ["Yusuf Saubana Mayowa"])).toBe(1);
   });
 
   it("returns a low score for a first-time sender despite other history existing", () => {
@@ -112,13 +126,13 @@ describe("scoreTransferAgainstCandidates — integration", () => {
     expect(top.confidenceScore).toBeLessThan(0.5);
   });
 
-  it("underpayment with typo'd name still ranks reasonably (manual review candidate)", () => {
+  it("small underpayment with typo'd name still ranks strongly but not perfectly", () => {
     const [top] = scoreTransferAgainstCandidates(
       { amount: 49800, senderName: "Adeola Jonson", receivedAt: new Date("2026-03-02T00:00:00Z") },
       [baseCandidate]
     );
-    expect(top.confidenceScore).toBeGreaterThan(0.6);
-    expect(top.confidenceScore).toBeLessThan(0.95);
+    expect(top.confidenceScore).toBeGreaterThan(0.85);
+    expect(top.confidenceScore).toBeLessThan(1);
   });
 
   it("ranks multiple candidates best-first", () => {
@@ -156,6 +170,26 @@ describe("scoreTransferAgainstCandidates — integration", () => {
 
     expect(top.confidenceScore).toBeGreaterThan(0.85);
     expect(top.nameScore).toBe(1);
+  });
+
+  it("auto-matches reordered personal names when amount and timing are strong", () => {
+    const [top] = scoreTransferAgainstCandidates(
+      { amount: 100, senderName: "SAUBANA MAYOWA YUSUF", receivedAt: new Date("2026-07-14T00:00:00Z") },
+      [
+        {
+          id: "ep_reordered_name",
+          expectedAmount: 100,
+          label: "chair",
+          dueDate: new Date("2026-07-14T00:00:00Z"),
+          identityCurrentName: "Yusuf Saubana Mayowa",
+          identityKnownNames: ["Yusuf Saubana Mayowa"],
+          priorSenderNames: [],
+        },
+      ]
+    );
+
+    expect(top.confidenceScore).toBeGreaterThan(0.85);
+    expect(top.nameScore).toBeGreaterThanOrEqual(0.9);
   });
 
   it("includes human-readable reasoning in every result", () => {

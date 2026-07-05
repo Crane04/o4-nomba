@@ -21,19 +21,18 @@ export function scoreAmount(transferAmount: number, expectedAmount: number): num
 }
 
 export function scoreName(senderName: string, knownNames: string[]): number {
-  const normalize = (s: string) => s.trim().toLowerCase().replace(/\s+/g, " ");
-  const a = normalize(senderName);
+  const a = normalizeName(senderName);
 
   let best = 0;
   for (const candidate of knownNames) {
-    const b = normalize(candidate);
+    const b = normalizeName(candidate);
     if (!a || !b) continue;
-    const dist = distance(a, b);
-    const maxLen = Math.max(a.length, b.length);
-    const similarity = maxLen === 0 ? 1 : 1 - dist / maxLen;
-    if (similarity > best) best = similarity;
+
+    const similarity = Math.max(scoreNameStringSimilarity(a, b), scoreNameTokenSimilarity(a, b));
+    best = Math.max(best, similarity);
   }
-  return Math.max(0, best);
+
+  return Math.min(1, Math.max(0, best));
 }
 
 export function scoreTiming(receivedAt: Date, dueDate: Date | null): number {
@@ -45,8 +44,7 @@ export function scoreTiming(receivedAt: Date, dueDate: Date | null): number {
 
 export function scoreHistory(senderName: string, priorSenderNames: string[]): number {
   if (priorSenderNames.length === 0) return 0.3;
-  const normalize = (s: string) => s.trim().toLowerCase();
-  return priorSenderNames.some((n) => normalize(n) === normalize(senderName)) ? 1 : 0.2;
+  return priorSenderNames.some((n) => scoreName(senderName, [n]) >= 0.9) ? 1 : 0.2;
 }
 
 export function buildReasoning(scores: {
@@ -105,4 +103,57 @@ export function scoreTransferAgainstCandidates(
   });
 
   return results.sort((a, b) => b.confidenceScore - a.confidenceScore);
+}
+
+function normalizeName(name: string) {
+  return name
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9 ]/g, " ")
+    .replace(/\s+/g, " ");
+}
+
+function scoreNameStringSimilarity(a: string, b: string) {
+  const dist = distance(a, b);
+  const maxLen = Math.max(a.length, b.length);
+  return maxLen === 0 ? 1 : 1 - dist / maxLen;
+}
+
+function scoreNameTokenSimilarity(a: string, b: string) {
+  const aTokens = tokenizeName(a);
+  const bTokens = tokenizeName(b);
+  if (aTokens.length === 0 || bTokens.length === 0) return 0;
+  if (Math.min(aTokens.length, bTokens.length) < 2) return 0;
+
+  let matched = 0;
+  let matchedScore = 0;
+  const remaining = [...bTokens];
+
+  for (const token of aTokens) {
+    const matches = remaining
+      .map((candidate, index) => ({ index, score: scoreNameStringSimilarity(token, candidate) }))
+      .filter(({ score }) => score >= 0.8)
+      .sort((left, right) => right.score - left.score);
+    const match = matches[0];
+    if (!match) continue;
+
+    matched += 1;
+    matchedScore += match.score;
+    remaining.splice(match.index, 1);
+  }
+
+  const smallerTokenCount = Math.min(aTokens.length, bTokens.length);
+  const largerTokenCount = Math.max(aTokens.length, bTokens.length);
+  const coverage = matched / smallerTokenCount;
+  const completeness = matched / largerTokenCount;
+
+  if (matched >= 2 && coverage >= 0.66) {
+    return Math.max(0.9, matchedScore / largerTokenCount);
+  }
+
+  return completeness;
+}
+
+function tokenizeName(name: string) {
+  return name.split(" ").filter((token) => token.length >= 2);
 }
