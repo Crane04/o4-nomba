@@ -1,6 +1,6 @@
 # O4 Database Schema
 
-This is a suggested schema for the O4 reconciliation system.
+This document describes the core database schema that powers the O4 reconciliation system.
 
 ## Entities
 
