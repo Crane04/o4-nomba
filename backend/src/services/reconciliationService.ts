@@ -122,6 +122,67 @@ export async function reconcileTransfer(organizationId: string, transferId: stri
   return { transfer, matches: scored, autoMatched, threshold: AUTO_MATCH_THRESHOLD };
 }
 
+export async function settlePendingPartialMatches(organizationId: string) {
+  const pendingMatches = await prisma.reconciliationMatch.findMany({
+    where: {
+      decision: "pending",
+      transfer: {
+        status: "under_review",
+        virtualAccount: { organizationId },
+      },
+      expectedPayment: {
+        organizationId,
+        status: { in: ["pending", "partially_matched"] },
+      },
+    },
+    include: {
+      transfer: true,
+      expectedPayment: true,
+    },
+    orderBy: { createdAt: "asc" },
+  });
+
+  const matchesByExpectedPayment = new Map<string, typeof pendingMatches>();
+  for (const match of pendingMatches) {
+    if (!hasStrongIdentitySignal(match) || match.timingScore < GOOD_TIMING_SCORE) continue;
+
+    const group = matchesByExpectedPayment.get(match.expectedPaymentId) ?? [];
+    group.push(match);
+    matchesByExpectedPayment.set(match.expectedPaymentId, group);
+  }
+
+  let settled = 0;
+
+  for (const matches of matchesByExpectedPayment.values()) {
+    const expectedPayment = matches[0]?.expectedPayment;
+    if (!expectedPayment) continue;
+
+    const settlementTotal = matches.reduce((sum, match) => sum + match.transfer.amount, 0);
+    const isSettled =
+      settlementTotal >= expectedPayment.expectedAmount &&
+      settlementTotal <= expectedPayment.expectedAmount * PARTIAL_SETTLEMENT_OVERPAY_TOLERANCE;
+
+    if (!isSettled) continue;
+
+    await prisma.$transaction([
+      ...matches.map((match) =>
+        prisma.reconciliationMatch.update({
+          where: { id: match.id },
+          data: { decision: "auto_matched", resolvedBy: "system", resolvedAt: new Date() },
+        })
+      ),
+      ...matches.map((match) => prisma.transfer.update({ where: { id: match.transferId }, data: { status: "matched" } })),
+      prisma.expectedPayment.update({
+        where: { id: expectedPayment.id },
+        data: { status: "matched" },
+      }),
+    ]);
+    settled += 1;
+  }
+
+  return { settled };
+}
+
 export async function resolveMatch(organizationId: string, matchId: string, resolvedBy: string) {
   const match = await prisma.reconciliationMatch.findFirstOrThrow({
     where: { id: matchId, expectedPayment: { organizationId } },

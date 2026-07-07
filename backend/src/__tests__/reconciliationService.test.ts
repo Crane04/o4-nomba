@@ -5,6 +5,7 @@ import {
   reconcileTransfer,
   rejectMatch,
   resolveMatch,
+  settlePendingPartialMatches,
 } from "../services/reconciliationService";
 
 vi.mock("../lib/prisma", () => ({
@@ -178,6 +179,59 @@ describe("reconciliationService", () => {
 
     expect(result.autoMatched).toBe(true);
     expect(result.matches[0].reasoning).toContain("overpaid by NGN 40");
+  });
+
+  it("settles existing pending partial matches from the review queue", async () => {
+    prismaMock.reconciliationMatch.findMany.mockResolvedValue([
+      {
+        id: "match-partial-1",
+        transferId: "transfer-1",
+        expectedPaymentId: "expected-1",
+        decision: "pending",
+        nameScore: 1,
+        historyScore: 1,
+        timingScore: 1,
+        transfer: { id: "transfer-1", amount: 100, status: "under_review" },
+        expectedPayment: { id: "expected-1", expectedAmount: 200 },
+      },
+      {
+        id: "match-partial-2",
+        transferId: "transfer-2",
+        expectedPaymentId: "expected-1",
+        decision: "pending",
+        nameScore: 1,
+        historyScore: 1,
+        timingScore: 1,
+        transfer: { id: "transfer-2", amount: 100, status: "under_review" },
+        expectedPayment: { id: "expected-1", expectedAmount: 200 },
+      },
+    ]);
+    prismaMock.reconciliationMatch.update.mockResolvedValue({ id: "match-partial-1" });
+    prismaMock.transfer.update.mockResolvedValue({ id: "transfer-1", status: "matched" });
+    prismaMock.expectedPayment.update.mockResolvedValue({ id: "expected-1", status: "matched" });
+
+    await expect(settlePendingPartialMatches("org-1")).resolves.toEqual({ settled: 1 });
+
+    expect(prismaMock.reconciliationMatch.update).toHaveBeenCalledWith({
+      where: { id: "match-partial-1" },
+      data: expect.objectContaining({ decision: "auto_matched", resolvedBy: "system" }),
+    });
+    expect(prismaMock.reconciliationMatch.update).toHaveBeenCalledWith({
+      where: { id: "match-partial-2" },
+      data: expect.objectContaining({ decision: "auto_matched", resolvedBy: "system" }),
+    });
+    expect(prismaMock.transfer.update).toHaveBeenCalledWith({
+      where: { id: "transfer-1" },
+      data: { status: "matched" },
+    });
+    expect(prismaMock.transfer.update).toHaveBeenCalledWith({
+      where: { id: "transfer-2" },
+      data: { status: "matched" },
+    });
+    expect(prismaMock.expectedPayment.update).toHaveBeenCalledWith({
+      where: { id: "expected-1" },
+      data: { status: "matched" },
+    });
   });
 
   it("keeps low confidence transfers under review", async () => {
