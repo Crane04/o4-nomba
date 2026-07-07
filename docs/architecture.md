@@ -2,7 +2,7 @@
 
 O4 is built around a backend API, a merchant portal, a relational database, Nomba virtual accounts, and a reconciliation engine.
 
-![O4 System Architecture](./system-architecture.png)
+![O4 System Architecture](./architecture.png)
 
 ## Core Components
 
@@ -37,3 +37,7 @@ See also:
 - [Reconciliation Engine](./reconciliation-engine.md)
 - [Technical Decisions](./technical-decisions.md)
 - [Database Schema](./database-schema.md)
+
+## Next
+
+[Documentation Home](./README.md) | [Next: Payment Flow](./payment-flow.md)

@@ -31,7 +31,7 @@ See the full documentation here:
 
 ## Architecture
 
-![O4 Architecture](./docs/system-architecture.png)
+![O4 Architecture](./docs/architecture.png)
 
 ## Status
 

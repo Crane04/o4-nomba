@@ -43,3 +43,7 @@ Businesses need a safe way to handle underpayments, overpayments, delayed transf
 The current implementation focuses on Nomba, but the architecture should support additional providers later.
 
 A provider adapter layer can normalize transactions from Nomba, bank APIs, and other payment processors into a single internal transaction format.
+
+## Next
+
+[Previous: Security](./security.md) | [Next: Roadmap](./roadmap.md)

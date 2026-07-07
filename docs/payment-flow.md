@@ -27,3 +27,7 @@ Flagged payments are reviewed by a merchant or finance officer. The reviewer can
 Confirmed matches update the invoice and transfer status. They can also improve future matching by saving trusted sender names for that customer.
 
 See the detailed sequence in [Sequence Diagram](./sequence-diagram.md).
+
+## Next
+
+[Previous: System Architecture](./architecture.md) | [Next: Sequence Diagram](./sequence-diagram.md)

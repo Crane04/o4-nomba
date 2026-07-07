@@ -35,3 +35,7 @@ An exact-match-only system can miss legitimate payments. A fully automatic syste
 O4 uses confidence scoring to keep automation useful while protecting the business from risky reconciliation decisions.
 
 See also [Technical Decisions](./technical-decisions.md).
+
+## Next
+
+[Previous: Sequence Diagram](./sequence-diagram.md) | [Next: Database Schema](./database-schema.md)

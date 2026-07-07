@@ -27,3 +27,7 @@ O4 is currently a functional MVP focused on Nomba virtual account reconciliation
 ## Long-Term Direction
 
 O4 can become a provider-agnostic reconciliation layer for businesses that collect bank transfers across multiple banks, processors, and accounting systems.
+
+## Next
+
+[Previous: Technical Decisions](./technical-decisions.md) | [Next: Demo Flow](./demo-flow.md)

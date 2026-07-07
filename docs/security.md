@@ -25,3 +25,7 @@ O4 handles payment-related data, so the system should protect organization bound
 - Webhook replay tooling
 - Rate limits on public endpoints
 - Stronger production monitoring and alerting
+
+## Next
+
+[Previous: API Overview](./api-overview.md) | [Next: Technical Decisions](./technical-decisions.md)
