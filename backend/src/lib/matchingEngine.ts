@@ -49,6 +49,8 @@ export function scoreHistory(senderName: string, priorSenderNames: string[]): nu
 
 export function buildReasoning(scores: {
   amountScore: number;
+  transferAmount: number;
+  expectedAmount: number;
   nameScore: number;
   timingScore: number;
   historyScore: number;
@@ -56,7 +58,11 @@ export function buildReasoning(scores: {
 }): string {
   const parts: string[] = [];
 
+  const amountDelta = scores.transferAmount - scores.expectedAmount;
+
   if (scores.amountScore >= 0.95) parts.push("amount matches exactly");
+  else if (amountDelta < 0) parts.push(`underpaid by ${formatAmount(Math.abs(amountDelta))}`);
+  else if (amountDelta > 0) parts.push(`overpaid by ${formatAmount(amountDelta)}`);
   else if (scores.amountScore >= 0.6) parts.push("amount is close but not exact");
   else parts.push("amount differs significantly");
 
@@ -98,7 +104,15 @@ export function scoreTransferAgainstCandidates(
       nameScore: Math.round(nameScore * 1000) / 1000,
       timingScore: Math.round(timingScore * 1000) / 1000,
       historyScore: Math.round(historyScore * 1000) / 1000,
-      reasoning: buildReasoning({ amountScore, nameScore, timingScore, historyScore, label: candidate.label }),
+      reasoning: buildReasoning({
+        amountScore,
+        transferAmount: transfer.amount,
+        expectedAmount: candidate.expectedAmount,
+        nameScore,
+        timingScore,
+        historyScore,
+        label: candidate.label,
+      }),
     };
   });
 
@@ -156,4 +170,8 @@ function scoreNameTokenSimilarity(a: string, b: string) {
 
 function tokenizeName(name: string) {
   return name.split(" ").filter((token) => token.length >= 2);
+}
+
+function formatAmount(amount: number) {
+  return `NGN ${amount.toLocaleString("en-NG", { maximumFractionDigits: 2 })}`;
 }

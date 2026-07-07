@@ -34,6 +34,7 @@ export const prismaMock = {
   },
   reconciliationMatch: {
     create: vi.fn(),
+    findMany: vi.fn(),
     findFirstOrThrow: vi.fn(),
     update: vi.fn(),
   },

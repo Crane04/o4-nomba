@@ -56,6 +56,166 @@ portal/   Merchant-facing web application
 docs/     Product and technical documentation
 ```
 
+## Local Setup
+
+### Prerequisites
+
+- Node.js 18+
+- npm
+- Docker and Docker Compose
+
+### 1. Install dependencies
+
+Install backend dependencies:
+
+```bash
+cd backend
+npm install
+```
+
+Install portal dependencies:
+
+```bash
+cd ../portal
+npm install
+```
+
+### 2. Configure environment variables
+
+Create local environment files from the examples:
+
+```bash
+cp backend/.env.example backend/.env
+cp portal/.env.example portal/.env
+```
+
+The backend uses:
+
+```env
+DATABASE_URL="postgresql://postgres:postgres@localhost:5432/o4?schema=public"
+PORT=4000
+JWT_SECRET="replace_with_a_long_random_secret"
+NOMBA_WEBHOOK_SECRET="replace_with_real_secret"
+NOMBA_BASE_URL=https://sandbox.nomba.com
+NOMBA_AUTH_URL=https://api.nomba.com
+NOMBA_CLIENT_ID=
+NOMBA_PRIVATE_KEY=
+NOMBA_PARENT_ACCOUNT_ID=
+NOMBA_SUB_ACCOUNT_ID=
+NOMBA_TRANSFERS_PATH=/v1/transactions/virtual?virtual_account={accountNumber}
+NOMBA_SYNC_ON_REQUEST=true
+NOMBA_SYNC_TTL_MS=10000
+NOMBA_ACCOUNT_ID=
+AUTO_MATCH_THRESHOLD=0.85
+```
+
+The portal uses:
+
+```env
+VITE_API_BASE_URL=http://localhost:4000
+```
+
+Do not commit real `.env` files.
+
+### 3. Start the database
+
+```bash
+cd backend
+npm run db:up
+```
+
+### 4. Run migrations and seed demo data
+
+```bash
+npm run prisma:setup
+```
+
+This starts Postgres, runs Prisma migrations, and seeds demo organizations, retailers, virtual accounts, invoices, transfer history, matched payments, and flagged payments.
+
+Demo login accounts:
+
+```text
+Eko Supplies Ltd
+admin@ekosupplies.com
+demo1234
+
+Kano Distributors
+admin@kanodist.com
+demo1234
+```
+
+## Running Locally
+
+Start the backend API:
+
+```bash
+cd backend
+npm run dev
+```
+
+Backend URL:
+
+```text
+http://localhost:4000
+```
+
+Start the portal:
+
+```bash
+cd portal
+npm run dev
+```
+
+Portal URL:
+
+```text
+http://localhost:5173
+```
+
+## Useful Commands
+
+Run backend tests:
+
+```bash
+cd backend
+npm run test
+```
+
+Run portal tests:
+
+```bash
+cd portal
+npm run test
+```
+
+Build backend:
+
+```bash
+cd backend
+npm run build
+```
+
+Build portal:
+
+```bash
+cd portal
+npm run build
+```
+
+Open Prisma Studio:
+
+```bash
+cd backend
+npm run prisma:studio
+```
+
+Stop local Postgres:
+
+```bash
+cd backend
+npm run db:down
+```
+
 ## Future Plans
 
 - Multi-bank support

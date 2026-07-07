@@ -3,6 +3,9 @@ import { getKnownNames } from "./identityService";
 import { scoreTransferAgainstCandidates, type ExpectedPaymentCandidate } from "../helpers/matchingEngine";
 
 const AUTO_MATCH_THRESHOLD = Number(process.env.AUTO_MATCH_THRESHOLD ?? 0.85);
+const PARTIAL_SETTLEMENT_OVERPAY_TOLERANCE = 1.25;
+const STRONG_IDENTITY_SCORE = 0.9;
+const GOOD_TIMING_SCORE = 0.7;
 
 export async function reconcileTransfer(organizationId: string, transferId: string) {
   const transfer = await prisma.transfer.findUniqueOrThrow({ where: { id: transferId } });
@@ -68,16 +71,45 @@ export async function reconcileTransfer(organizationId: string, transferId: stri
   );
 
   const top = scored[0];
-  const autoMatched = top.confidenceScore >= AUTO_MATCH_THRESHOLD;
+  const topCandidate = candidates.find((candidate) => candidate.id === top.expectedPaymentId)!;
+  const winningMatch = persisted.find((m) => m.expectedPaymentId === top.expectedPaymentId)!;
+  const priorSettlementMatches = (
+    await getPriorSettlementMatches(top.expectedPaymentId, transfer.id, {
+      includePending: true,
+    })
+  ).filter((match) => hasStrongIdentitySignal(match) && match.timingScore >= GOOD_TIMING_SCORE);
+  const settlementTotal =
+    transfer.amount + priorSettlementMatches.reduce((sum, match) => sum + match.transfer.amount, 0);
+  const settlesWithPartials =
+    settlementTotal >= topCandidate.expectedAmount &&
+    settlementTotal <= topCandidate.expectedAmount * PARTIAL_SETTLEMENT_OVERPAY_TOLERANCE &&
+    hasStrongIdentitySignal(top) &&
+    top.timingScore >= GOOD_TIMING_SCORE;
+  const acceptableOverpayment =
+    transfer.amount >= topCandidate.expectedAmount &&
+    transfer.amount <= topCandidate.expectedAmount * PARTIAL_SETTLEMENT_OVERPAY_TOLERANCE &&
+    hasStrongIdentitySignal(top) &&
+    top.timingScore >= GOOD_TIMING_SCORE;
+  const autoMatched = top.confidenceScore >= AUTO_MATCH_THRESHOLD || settlesWithPartials || acceptableOverpayment;
 
   if (autoMatched) {
-    const winningMatch = persisted.find((m) => m.expectedPaymentId === top.expectedPaymentId)!;
     await prisma.$transaction([
       prisma.reconciliationMatch.update({
         where: { id: winningMatch.id },
         data: { decision: "auto_matched", resolvedBy: "system", resolvedAt: new Date() },
       }),
+      ...priorSettlementMatches
+        .filter((match) => match.decision === "pending")
+        .map((match) =>
+          prisma.reconciliationMatch.update({
+            where: { id: match.id },
+            data: { decision: "auto_matched", resolvedBy: "system", resolvedAt: new Date() },
+          })
+        ),
       prisma.transfer.update({ where: { id: transfer.id }, data: { status: "matched" } }),
+      ...priorSettlementMatches
+        .filter((match) => match.transfer.status === "under_review")
+        .map((match) => prisma.transfer.update({ where: { id: match.transferId }, data: { status: "matched" } })),
       prisma.expectedPayment.update({
         where: { id: top.expectedPaymentId },
         data: { status: "matched" },
@@ -107,7 +139,7 @@ export async function resolveMatch(organizationId: string, matchId: string, reso
     prisma.transfer.update({ where: { id: match.transferId }, data: { status: "resolved" } }),
     prisma.expectedPayment.update({
       where: { id: match.expectedPaymentId },
-      data: { status: "matched" },
+      data: { status: await getExpectedPaymentSettlementStatus(match.expectedPaymentId, match.transferId) },
     }),
   ]);
 
@@ -179,5 +211,50 @@ async function rememberTrustedSenderName(organizationId: string, identityId: str
   await prisma.customerIdentity.update({
     where: { id: identityId },
     data: { knownSenderNames: [...identity.knownSenderNames, trustedName] },
+  });
+}
+
+function hasStrongIdentitySignal(match: { nameScore: number; historyScore: number }) {
+  return match.nameScore >= STRONG_IDENTITY_SCORE || match.historyScore >= STRONG_IDENTITY_SCORE;
+}
+
+async function getExpectedPaymentSettlementStatus(expectedPaymentId: string, currentTransferId: string) {
+  const expectedPayment = (await prisma.expectedPayment.findMany({
+    where: { id: expectedPaymentId },
+  })) ?? [];
+  const expectedAmount = expectedPayment[0]?.expectedAmount ?? 0;
+  const priorSettlementMatches = await getPriorSettlementMatches(expectedPaymentId, currentTransferId, {
+    includePending: false,
+  });
+  const currentMatch = await prisma.reconciliationMatch.findFirstOrThrow({
+    where: { expectedPaymentId, transferId: currentTransferId },
+    include: { transfer: true },
+  });
+  const settledAmount =
+    currentMatch.transfer.amount + priorSettlementMatches.reduce((sum, match) => sum + match.transfer.amount, 0);
+
+  return settledAmount >= expectedAmount ? "matched" : "partially_matched";
+}
+
+async function getPriorSettlementMatches(
+  expectedPaymentId: string,
+  currentTransferId: string,
+  options: { includePending: boolean }
+) {
+  return prisma.reconciliationMatch.findMany({
+    where: {
+      expectedPaymentId,
+      transferId: { not: currentTransferId },
+      decision: {
+        in: options.includePending
+          ? ["pending", "auto_matched", "manual_resolved"]
+          : ["auto_matched", "manual_resolved"],
+      },
+      transfer: {
+        status: { in: options.includePending ? ["under_review", "matched", "resolved"] : ["matched", "resolved"] },
+      },
+    },
+    include: { transfer: true },
+    orderBy: { createdAt: "asc" },
   });
 }

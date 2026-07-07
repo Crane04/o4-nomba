@@ -50,6 +50,7 @@ describe("reconciliationService", () => {
       id: `match-${data.expectedPaymentId}`,
       ...data,
     }));
+    prismaMock.reconciliationMatch.findMany.mockResolvedValue([]);
   });
 
   it("marks transfers under review when there are no expected payments", async () => {
@@ -103,6 +104,82 @@ describe("reconciliationService", () => {
     });
   });
 
+  it("auto-resolves a pending partial payment when the next transfer completes the expected amount", async () => {
+    prismaMock.transfer.findUniqueOrThrow.mockResolvedValue({
+      ...transfer,
+      amount: 100,
+    });
+    prismaMock.expectedPayment.findMany.mockResolvedValue([
+      {
+        ...expectedPayment,
+        expectedAmount: 200,
+      },
+    ]);
+    prismaMock.transfer.findMany.mockResolvedValue([]);
+    getKnownNamesMock.mockResolvedValue(["Amina Stores"]);
+    prismaMock.reconciliationMatch.findMany.mockResolvedValue([
+      {
+        id: "match-prior-partial",
+        transferId: "transfer-prior",
+        expectedPaymentId: "expected-1",
+        decision: "pending",
+        nameScore: 1,
+        historyScore: 1,
+        timingScore: 1,
+        transfer: {
+          id: "transfer-prior",
+          amount: 100,
+          status: "under_review",
+        },
+      },
+    ]);
+    prismaMock.reconciliationMatch.update.mockResolvedValue({ id: "match-expected-1" });
+    prismaMock.transfer.update.mockResolvedValue({ id: "transfer-1", status: "matched" });
+    prismaMock.expectedPayment.update.mockResolvedValue({ id: "expected-1", status: "matched" });
+
+    const result = await reconcileTransfer("org-1", "transfer-1");
+
+    expect(result.autoMatched).toBe(true);
+    expect(prismaMock.reconciliationMatch.update).toHaveBeenCalledWith({
+      where: { id: "match-prior-partial" },
+      data: expect.objectContaining({
+        decision: "auto_matched",
+        resolvedBy: "system",
+      }),
+    });
+    expect(prismaMock.transfer.update).toHaveBeenCalledWith({
+      where: { id: "transfer-prior" },
+      data: { status: "matched" },
+    });
+    expect(prismaMock.expectedPayment.update).toHaveBeenCalledWith({
+      where: { id: "expected-1" },
+      data: { status: "matched" },
+    });
+  });
+
+  it("auto-matches a modest overpayment when identity and timing are strong", async () => {
+    prismaMock.transfer.findUniqueOrThrow.mockResolvedValue({
+      ...transfer,
+      amount: 240,
+    });
+    prismaMock.expectedPayment.findMany.mockResolvedValue([
+      {
+        ...expectedPayment,
+        expectedAmount: 200,
+      },
+    ]);
+    prismaMock.transfer.findMany.mockResolvedValue([]);
+    getKnownNamesMock.mockResolvedValue(["Amina Stores"]);
+    prismaMock.reconciliationMatch.update.mockResolvedValue({ id: "match-expected-1" });
+    prismaMock.transfer.update.mockResolvedValue({ id: "transfer-1", status: "matched" });
+    prismaMock.expectedPayment.update.mockResolvedValue({ id: "expected-1", status: "matched" });
+
+    const result = await reconcileTransfer("org-1", "transfer-1");
+
+    expect(result.autoMatched).toBe(true);
+    expect(result.matches[0].reasoning).toContain("overpaid by NGN 40");
+  });
+
   it("keeps low confidence transfers under review", async () => {
     prismaMock.expectedPayment.findMany.mockResolvedValue([
       {
@@ -126,13 +203,20 @@ describe("reconciliationService", () => {
   });
 
   it("resolves a match, updates records, and remembers a new trusted sender", async () => {
-    prismaMock.reconciliationMatch.findFirstOrThrow.mockResolvedValue({
+    prismaMock.reconciliationMatch.findFirstOrThrow.mockResolvedValueOnce({
       id: "match-1",
       transferId: "transfer-1",
       expectedPaymentId: "expected-1",
-      transfer: { id: "transfer-1", senderName: "Amina Stores Branch" },
-      expectedPayment: { id: "expected-1", identityId: "identity-1" },
+      transfer: { id: "transfer-1", amount: 50000, senderName: "Amina Stores Branch" },
+      expectedPayment: { id: "expected-1", identityId: "identity-1", expectedAmount: 50000 },
     });
+    prismaMock.reconciliationMatch.findFirstOrThrow.mockResolvedValueOnce({
+      id: "match-1",
+      transferId: "transfer-1",
+      expectedPaymentId: "expected-1",
+      transfer: { id: "transfer-1", amount: 50000, senderName: "Amina Stores Branch" },
+    });
+    prismaMock.expectedPayment.findMany.mockResolvedValue([{ ...expectedPayment, expectedAmount: 50000 }]);
     prismaMock.reconciliationMatch.update.mockResolvedValue({ id: "match-1", decision: "manual_resolved" });
     prismaMock.transfer.update.mockResolvedValue({ id: "transfer-1", status: "resolved" });
     prismaMock.expectedPayment.update.mockResolvedValue({ id: "expected-1", status: "matched" });
@@ -158,6 +242,38 @@ describe("reconciliationService", () => {
     expect(prismaMock.customerIdentity.update).toHaveBeenCalledWith({
       where: { id: "identity-1" },
       data: { knownSenderNames: ["Amina Stores", "Amina Stores Branch"] },
+    });
+  });
+
+  it("keeps a manually confirmed underpayment partially matched", async () => {
+    prismaMock.reconciliationMatch.findFirstOrThrow.mockResolvedValueOnce({
+      id: "match-1",
+      transferId: "transfer-1",
+      expectedPaymentId: "expected-1",
+      transfer: { id: "transfer-1", amount: 100, senderName: "Amina Stores Branch" },
+      expectedPayment: { id: "expected-1", identityId: "identity-1", expectedAmount: 200 },
+    });
+    prismaMock.reconciliationMatch.findFirstOrThrow.mockResolvedValueOnce({
+      id: "match-1",
+      transferId: "transfer-1",
+      expectedPaymentId: "expected-1",
+      transfer: { id: "transfer-1", amount: 100, senderName: "Amina Stores Branch" },
+    });
+    prismaMock.expectedPayment.findMany.mockResolvedValue([{ ...expectedPayment, expectedAmount: 200 }]);
+    prismaMock.reconciliationMatch.update.mockResolvedValue({ id: "match-1", decision: "manual_resolved" });
+    prismaMock.transfer.update.mockResolvedValue({ id: "transfer-1", status: "resolved" });
+    prismaMock.expectedPayment.update.mockResolvedValue({ id: "expected-1", status: "partially_matched" });
+    prismaMock.customerIdentity.findFirstOrThrow.mockResolvedValue({ knownSenderNames: ["Amina Stores"] });
+    prismaMock.customerIdentity.update.mockResolvedValue({
+      id: "identity-1",
+      knownSenderNames: ["Amina Stores", "Amina Stores Branch"],
+    });
+
+    await resolveMatch("org-1", "match-1", "ops@example.com");
+
+    expect(prismaMock.expectedPayment.update).toHaveBeenCalledWith({
+      where: { id: "expected-1" },
+      data: { status: "partially_matched" },
     });
   });
 
